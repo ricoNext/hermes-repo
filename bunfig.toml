@@ -1,0 +1,4 @@
+# https://bun.sh/docs/runtime/bunfig
+[install]
+# 与 package.json engines 一致：不满足 Node 版本时安装失败
+engineStrict = true

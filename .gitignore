@@ -125,6 +125,9 @@ dist
 # Stores VSCode versions used for testing VSCode extensions
 .vscode-test
 
+# 使用 Bun 管理依赖；勿提交 npm 锁文件
+package-lock.json
+
 # pnpm
 .pnpm-store
 

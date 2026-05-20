@@ -1,0 +1,75 @@
+{
+  "name": "@riconext/hermes-repo",
+  "version": "0.1.0",
+  "description": "Hermes-repo：在任意 Git 仓库用 `hermes-repo init` 落地 `.hermes-repo` 与 `config.json`，把 Hermes 式「经验 → 技能 → 自改进」闭环映射到文档与团队约定；validate / doctor 等持续迭代。",
+  "license": "MIT",
+  "author": {
+    "name": "Rico",
+    "url": "https://github.com/ricoNext"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ricoNext/hermes-repo.git"
+  },
+  "homepage": "https://github.com/ricoNext/hermes-repo",
+  "bugs": {
+    "url": "https://github.com/ricoNext/hermes-repo/issues"
+  },
+  "type": "module",
+  "packageManager": "bun@1.3.12",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      },
+      "require": {
+        "types": "./dist/index.d.cts",
+        "default": "./dist/index.cjs"
+      }
+    },
+    "./package.json": "./package.json"
+  },
+  "bin": {
+    "hermes-repo": "./dist/cli.js",
+    "hr": "./dist/cli.js"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "sideEffects": false,
+  "dependencies": {
+    "@inquirer/prompts": "^7.5.0",
+    "commander": "^13.1.0"
+  },
+  "engines": {
+    "node": ">=24"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build": "tsup",
+    "prepublishOnly": "bun run build",
+    "dev": "tsup --watch",
+    "typecheck": "tsc --noEmit"
+  },
+  "keywords": [
+    "hermes-repo",
+    "evolve",
+    "git",
+    "cli",
+    "documentation",
+    "captures"
+  ],
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "tsup": "^8.5.0",
+    "typescript": "^5.9.0"
+  }
+}
