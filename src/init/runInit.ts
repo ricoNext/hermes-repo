@@ -1,0 +1,149 @@
+import { spawnSync } from "node:child_process";
+import { resolve } from "node:path";
+import {
+  DEFAULT_ASSISTANT_IDS,
+  parseToolsArg,
+  validateAssistantSelection,
+} from "./assistants/registry.js";
+import type { AssistantId } from "./assistants/types.js";
+import { ensureMemoryTree } from "./ensureDirs.js";
+import { mergeAssistants } from "./mergeAssistants.js";
+import { mergeHermesGitignore } from "./mergeGitignore.js";
+import { gatherInitOptions } from "./prompts.js";
+import type { InitCliOptions, InitReport } from "./types.js";
+import { writeScaffoldFiles } from "./writeScaffoldFile.js";
+
+export function resolveTargetDir(cwd?: string): string {
+  const targetDir = resolve(cwd ?? process.cwd());
+  const gitCheck = spawnSync("git", ["rev-parse", "--is-inside-work-tree"], {
+    cwd: targetDir,
+    encoding: "utf8",
+  });
+  if (gitCheck.status !== 0) {
+    console.warn(
+      "warn: 当前目录可能不是 Git 仓库，init 仍会继续（建议在有 git 的项目根目录执行）",
+    );
+  }
+  return targetDir;
+}
+
+function resolveSelectedAssistants(opts: InitCliOptions): AssistantId[] {
+  if (opts.assistants) {
+    validateAssistantSelection(opts.assistants);
+    return opts.assistants;
+  }
+  if (opts.tools) {
+    if (!opts.yes) {
+      console.error("init --tools requires -y in non-interactive mode");
+      process.exit(1);
+    }
+    return parseToolsArg(opts.tools);
+  }
+  if (opts.yes) {
+    return [...DEFAULT_ASSISTANT_IDS];
+  }
+  return [];
+}
+
+export function printInitReport(report: InitReport): void {
+  const created = report.files.filter((f) => f.action === "created");
+  const skipped = report.files.filter((f) => f.action === "skipped");
+  const overwritten = report.files.filter((f) => f.action === "overwritten");
+
+  console.log(`\nhermes-repo init 完成 → ${report.targetDir}\n`);
+  console.log(`已启用助手: ${report.assistants.join(", ")}\n`);
+
+  if (created.length > 0) {
+    console.log(`已创建 (${created.length}):`);
+    for (const f of created) {
+      console.log(`  + ${f.path}`);
+    }
+  }
+
+  if (overwritten.length > 0) {
+    console.log(`已覆盖 (${overwritten.length}):`);
+    for (const f of overwritten) {
+      console.log(`  ~ ${f.path}`);
+    }
+  }
+
+  if (skipped.length > 0) {
+    console.log(`已跳过 (${skipped.length}):`);
+    for (const f of skipped) {
+      console.log(`  - ${f.path}`);
+    }
+  }
+
+  if (report.gitignoreAction) {
+    console.log(`\n.gitignore: ${report.gitignoreAction} hermes-repo 标记块`);
+  }
+
+  for (const warning of report.warnings) {
+    console.warn(`warn: ${warning}`);
+  }
+
+  console.log("");
+}
+
+export async function runInit(opts: InitCliOptions): Promise<InitReport> {
+  if (!process.stdin.isTTY && !opts.yes) {
+    console.error("init requires -y in non-interactive environments");
+    process.exit(1);
+  }
+
+  if (opts.tools && !opts.yes) {
+    console.error("init --tools requires -y");
+    process.exit(1);
+  }
+
+  let resolved: {
+    targetDir: string;
+    force: boolean;
+    includeExampleTemplates: boolean;
+    assistants: AssistantId[];
+    cancelled: boolean;
+  };
+
+  if (opts.yes) {
+    const targetDir = resolveTargetDir(opts.cwd);
+    const selected = resolveSelectedAssistants(opts);
+    resolved = {
+      targetDir,
+      force: Boolean(opts.force),
+      includeExampleTemplates: opts.includeExampleTemplates ?? true,
+      assistants: mergeAssistants(targetDir, selected),
+      cancelled: false,
+    };
+  } else {
+    const gathered = await gatherInitOptions(opts);
+    if (gathered.cancelled) {
+      console.log("init 已取消");
+      process.exit(0);
+    }
+    resolved = {
+      ...gathered,
+      assistants: mergeAssistants(gathered.targetDir, gathered.assistants),
+    };
+  }
+
+  const report: InitReport = {
+    targetDir: resolved.targetDir,
+    assistants: resolved.assistants,
+    files: [],
+    warnings: [],
+  };
+
+  ensureMemoryTree(resolved.targetDir);
+  writeScaffoldFiles(resolved.targetDir, resolved, report);
+
+  const gitignore = mergeHermesGitignore(resolved.targetDir);
+  report.gitignoreAction = gitignore.action;
+  if (gitignore.warnBroadMemoryIgnore) {
+    report.warnings.push(
+      ".gitignore 中存在对整个 .memory/ 的忽略规则，可能与团队层放行冲突，请手动检查",
+    );
+  }
+
+  printInitReport(report);
+  return report;
+}

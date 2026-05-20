@@ -1,0 +1,17 @@
+# >>> hermes-repo memory (do not edit this block manually)
+# 个人层 — 不提交
+.memory/captures/
+.memory/sessions/
+.memory/refs/
+.memory/personal/
+.memory/hermes-debug.log
+
+# 团队层 — 提交
+!.memory/topics/
+!.memory/skills/
+!.memory/MEMORY.md
+!.memory/MEMORY-*.md
+!.memory/team/
+!.memory/config.json
+!.memory/templates/
+# <<< hermes-repo memory

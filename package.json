@@ -1,0 +1,57 @@
+{
+  "name": "@riconext/hermes-repo",
+  "version": "0.2.4",
+  "description": "跨编程助手的项目级记忆系统",
+  "type": "module",
+  "license": "MIT",
+  "author": "Rico",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ricoNext/hermes-repo.git"
+  },
+  "bugs": {
+    "url": "https://github.com/ricoNext/hermes-repo/issues"
+  },
+  "homepage": "https://github.com/ricoNext/hermes-repo#readme",
+  "keywords": [
+    "claude-code",
+    "hooks",
+    "memory",
+    "ai",
+    "cursor",
+    "agents",
+    "hermes"
+  ],
+  "bin": {
+    "hermes-repo": "./dist/cli.js"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  },
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "test": "bun run build && vitest run",
+    "typecheck": "tsc --noEmit",
+    "prepublishOnly": "bun run build && chmod +x dist/cli.js"
+  },
+  "dependencies": {
+    "@inquirer/prompts": "^7.5.1",
+    "commander": "^13.1.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.15.29",
+    "tsup": "^8.5.0",
+    "typescript": "^5.8.3",
+    "vitest": "^3.2.4"
+  }
+}

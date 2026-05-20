@@ -1,0 +1,110 @@
+import { copyFileSync, writeFileSync } from "node:fs";
+import { join } from "node:path";
+import { getAdapter } from "./assistants/registry.js";
+import type { AssistantId } from "./assistants/types.js";
+import type { InitReport, InitResolvedOptions } from "./types.js";
+import { EXAMPLE_TEMPLATE_FILES, memoryPath } from "./paths.js";
+import { renderTemplate, resolveTemplatePath } from "./templateDir.js";
+import { mergeConfigForInit } from "./mergeConfig.js";
+import { shouldWriteFile, writeIfAllowed } from "./scaffoldWrite.js";
+
+export { shouldWriteFile } from "./scaffoldWrite.js";
+
+export function buildConfigJson(assistants: AssistantId[]): string {
+  return `${JSON.stringify(
+    {
+      version: 1,
+      storage: { backend: "file" },
+      assistants,
+      debug: false,
+    },
+    null,
+    2,
+  )}\n`;
+}
+
+function writeConfigJson(
+  report: InitReport,
+  repoRoot: string,
+  assistants: AssistantId[],
+): void {
+  const { content, action } = mergeConfigForInit(repoRoot, assistants);
+  const absolutePath = memoryPath(repoRoot, "config.json");
+  writeFileSync(absolutePath, content, "utf8");
+  report.files.push({ path: ".memory/config.json", action });
+}
+
+function copyTemplateIfAllowed(
+  report: InitReport,
+  templateName: string,
+  destAbsolute: string,
+  relativePath: string,
+  force: boolean,
+): void {
+  const { write, action } = shouldWriteFile(destAbsolute, force);
+  if (!write) {
+    report.files.push({ path: relativePath, action });
+    return;
+  }
+  copyFileSync(resolveTemplatePath(templateName), destAbsolute);
+  report.files.push({ path: relativePath, action });
+}
+
+export function writeScaffoldFiles(
+  repoRoot: string,
+  opts: InitResolvedOptions,
+  report: InitReport,
+): void {
+  const { force, includeExampleTemplates, assistants } = opts;
+
+  writeConfigJson(report, repoRoot, assistants);
+
+  writeIfAllowed(
+    report,
+    memoryPath(repoRoot, "MEMORY.md"),
+    ".memory/MEMORY.md",
+    renderTemplate("MEMORY.md.tpl"),
+    force,
+  );
+
+  writeIfAllowed(
+    report,
+    memoryPath(repoRoot, "sessions", "index.json"),
+    ".memory/sessions/index.json",
+    `${JSON.stringify({ version: 1, sessions: [] }, null, 2)}\n`,
+    force,
+  );
+
+  writeIfAllowed(
+    report,
+    memoryPath(repoRoot, "team", "steward-log.md"),
+    ".memory/team/steward-log.md",
+    renderTemplate("steward-log.md.tpl"),
+    force,
+  );
+
+  writeIfAllowed(
+    report,
+    join(repoRoot, "AGENTS.md"),
+    "AGENTS.md",
+    renderTemplate("AGENTS.md.tpl"),
+    force,
+  );
+
+  for (const id of assistants) {
+    getAdapter(id).write({ repoRoot, force, report });
+  }
+
+  if (includeExampleTemplates) {
+    for (const name of EXAMPLE_TEMPLATE_FILES) {
+      const dest = memoryPath(repoRoot, "templates", name);
+      copyTemplateIfAllowed(
+        report,
+        name,
+        dest,
+        `.memory/templates/${name}`,
+        force,
+      );
+    }
+  }
+}

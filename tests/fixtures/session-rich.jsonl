@@ -1,0 +1,11 @@
+{"type":"user","message":{"content":"我们需要修复认证模块的约定"}}
+{"type":"assistant","message":{"content":"好的，我先看一下代码"}}
+{"type":"user","message":{"content":"不对，应该用 httpOnly cookie"}}
+{"type":"assistant","message":{"content":"明白，我来修改"}}
+{"type":"tool_use","name":"Write","input":{}}
+{"type":"tool_use","name":"Read","input":{}}
+{"type":"tool_use","name":"Write","input":{}}
+{"type":"tool_use","name":"Edit","input":{}}
+{"type":"tool_use","name":"Write","input":{}}
+{"type":"tool_use","name":"Bash","input":{}}
+{"type":"tool_use","name":"Write","input":{}}

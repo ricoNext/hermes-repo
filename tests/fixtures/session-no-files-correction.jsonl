@@ -1,0 +1,5 @@
+{"type":"user","message":{"content":"请解释一下这个 API 的设计"}}
+{"type":"assistant","message":{"content":"这个 API 使用 REST 风格返回 JSON"}}
+{"type":"user","message":{"content":"不对，我们项目约定必须用 GraphQL，因为之前架构决策如此"}}
+{"type":"assistant","message":{"content":"了解，我会按 GraphQL 约定来"}}
+{"type":"user","message":{"content":"另外注意：所有接口必须有统一的错误格式"}}
