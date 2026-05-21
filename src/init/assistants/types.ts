@@ -3,6 +3,7 @@ import type { InitReport } from "../types.js";
 export type AssistantId =
   | "claude-code"
   | "cursor"
+  | "codebuddy"
   | "codex"
   | "copilot"
   | "copilot-cli";

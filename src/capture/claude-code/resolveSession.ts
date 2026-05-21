@@ -87,7 +87,7 @@ export function resolveSessionJsonlPath(
   return candidates[0]?.path ?? null;
 }
 
-/** 从 hook stdin 读取 Claude Code 传入的 transcript_path（非 TTY 时） */
+/** @deprecated 使用 readHookInputSync；保留兼容测试与旧调用 */
 export function readHookTranscriptPathSync(): string | null {
   if (process.stdin.isTTY) {
     return null;

@@ -1,20 +1,15 @@
-import { debugLog } from "../../config/debugLog.js";
-import { inferCaptureType, shouldCapture } from "../shouldCapture.js";
-import {
-  appendSessionIndex,
-  relativeCapturePath,
-} from "../sessionsIndex.js";
+import { commitCapture } from "../commitCapture.js";
+import { shouldCapture } from "../shouldCapture.js";
 import type { CaptureResult } from "../types.js";
-import { writeCaptureFile } from "../writeCapture.js";
 import { parseJsonlFile } from "./parseJsonl.js";
 import { resolveSessionJsonlPath } from "./resolveSession.js";
 
-export function runClaudeCodeCapture(
+export async function runClaudeCodeCapture(
   repoRoot: string,
   cwd?: string,
   dryRun?: boolean,
   options?: { transcriptPath?: string; debug?: boolean },
-): CaptureResult {
+): Promise<CaptureResult> {
   const jsonlPath = resolveSessionJsonlPath(repoRoot, {
     cwd,
     transcriptPath: options?.transcriptPath,
@@ -32,26 +27,12 @@ export function runClaudeCodeCapture(
     };
   }
 
-  const type = inferCaptureType(session);
-
-  if (dryRun) {
-    debugLog(
-      options?.debug === true,
-      "capture",
-      `[dry-run] would capture ${type} session=${session.sessionId} from ${jsonlPath}`,
-    );
-    return { written: false, reason: "dry-run", jsonlPath };
-  }
-
-  const { filename } = writeCaptureFile(repoRoot, session, type);
-  const captureFile = relativeCapturePath(type, filename);
-
-  appendSessionIndex(repoRoot, {
-    id: session.sessionId,
-    capturedAt: new Date().toISOString(),
-    captureFile,
+  return commitCapture({
+    repoRoot,
+    session,
+    jsonlPath,
     assistant: "claude-code",
+    dryRun,
+    debug: options?.debug,
   });
-
-  return { written: true, capturePath: captureFile };
 }

@@ -1,6 +1,7 @@
 import { spawnSync } from "node:child_process";
 import {
   existsSync,
+  mkdirSync,
   mkdtempSync,
   readFileSync,
   rmSync,
@@ -10,7 +11,9 @@ import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { afterEach, describe, expect, it } from "vitest";
+import { ensureMemoryTree } from "../src/init/ensureDirs.js";
 import { runInit } from "../src/init/runInit.js";
+import { writeScaffoldFiles } from "../src/init/writeScaffoldFile.js";
 
 const rootDir = join(dirname(fileURLToPath(import.meta.url)), "..");
 const cliPath = join(rootDir, "dist", "cli.js");
@@ -77,6 +80,11 @@ describe("init", () => {
     ) as { version: number; sessions: unknown[] };
     expect(index.version).toBe(1);
     expect(Array.isArray(index.sessions)).toBe(true);
+
+    const llm = JSON.parse(
+      readFileSync(join(dir, ".memory/llm.json"), "utf8"),
+    ) as { enabled: boolean };
+    expect(llm.enabled).toBe(false);
   });
 
   it("writes config.json v1 file backend", () => {
@@ -172,18 +180,18 @@ describe("init", () => {
     expect(merged.assistants).toContain("legacy-id");
   });
 
-  it("writes hooks.json with Claude Code command hook schema", () => {
+  it("writes settings.local.json with Claude Code command hook schema", () => {
     const dir = makeTempDir();
     runCliInDir(dir, ["init", "-y"]);
 
-    const hooks = JSON.parse(
-      readFileSync(join(dir, ".claude/hooks.json"), "utf8"),
+    const settings = JSON.parse(
+      readFileSync(join(dir, ".claude", "settings.local.json"), "utf8"),
     ) as {
       hooks: Record<string, { hooks: { type: string; command: string }[] }[]>;
     };
 
-    const stopCmd = hooks.hooks.Stop?.[0]?.hooks?.[0];
-    const startCmd = hooks.hooks.SessionStart?.[0]?.hooks?.[0];
+    const stopCmd = settings.hooks.Stop?.[0]?.hooks?.[0];
+    const startCmd = settings.hooks.SessionStart?.[0]?.hooks?.[0];
     expect(stopCmd?.type).toBe("command");
     expect(startCmd?.type).toBe("command");
     expect(stopCmd?.command).toContain("capture");
@@ -191,14 +199,153 @@ describe("init", () => {
     expect(stopCmd?.command).toContain("@riconext/hermes-repo");
   });
 
+  it("init -y --tools cursor writes .cursor/hooks.json", () => {
+    const dir = makeTempDir();
+    const { status, stdout } = runCliInDir(dir, [
+      "init",
+      "-y",
+      "--tools",
+      "cursor",
+    ]);
+    expect(status).toBe(0);
+    expect(stdout).toMatch(/cursor/);
+
+    const hooks = JSON.parse(
+      readFileSync(join(dir, ".cursor", "hooks.json"), "utf8"),
+    ) as {
+      version: number;
+      hooks: Record<string, { command: string }[]>;
+    };
+    expect(hooks.version).toBe(1);
+    expect(hooks.hooks.sessionStart[0]?.command).toContain("inject");
+    expect(hooks.hooks.stop[0]?.command).toContain("capture");
+
+    const config = JSON.parse(
+      readFileSync(join(dir, ".memory/config.json"), "utf8"),
+    ) as { assistants: string[] };
+    expect(config.assistants).toContain("cursor");
+  });
+
+  it("init -y --tools claude-code,cursor writes both hook configs", () => {
+    const dir = makeTempDir();
+    expect(
+      runCliInDir(dir, ["init", "-y", "--tools", "claude-code,cursor"]).status,
+    ).toBe(0);
+    expect(existsSync(join(dir, ".claude", "settings.local.json"))).toBe(true);
+    expect(existsSync(join(dir, ".cursor", "hooks.json"))).toBe(true);
+  });
+
+  it("init -y --tools codebuddy writes .codebuddy/settings.local.json", () => {
+    const dir = makeTempDir();
+    expect(runCliInDir(dir, ["init", "-y", "--tools", "codebuddy"]).status).toBe(
+      0,
+    );
+
+    const settings = JSON.parse(
+      readFileSync(join(dir, ".codebuddy", "settings.local.json"), "utf8"),
+    ) as {
+      hooks: Record<string, { hooks: { type: string; command: string }[] }[]>;
+    };
+    expect(settings.hooks.Stop[0]?.hooks[0]?.command).toContain("capture");
+    expect(settings.hooks.SessionStart[0]?.hooks[0]?.command).toContain(
+      "inject",
+    );
+
+    const config = JSON.parse(
+      readFileSync(join(dir, ".memory/config.json"), "utf8"),
+    ) as { assistants: string[] };
+    expect(config.assistants).toContain("codebuddy");
+  });
+
+  it("merges cursor hooks without dropping notification", () => {
+    const dir = makeTempDir();
+    mkdirSync(join(dir, ".cursor"), { recursive: true });
+    writeFileSync(
+      join(dir, ".cursor", "hooks.json"),
+      `${JSON.stringify({
+        version: 1,
+        hooks: {
+          notification: [{ command: "echo notify" }],
+          stop: [{ command: "echo old-stop" }],
+        },
+      })}\n`,
+      "utf8",
+    );
+
+    runCliInDir(dir, ["init", "-y", "--tools", "cursor"]);
+
+    const hooks = JSON.parse(
+      readFileSync(join(dir, ".cursor", "hooks.json"), "utf8"),
+    ) as { hooks: Record<string, { command: string }[]> };
+    expect(hooks.hooks.notification[0]?.command).toBe("echo notify");
+    expect(hooks.hooks.stop[0]?.command).toContain("capture");
+  });
+
+  it("merges hooks into existing settings.local.json without dropping other events", () => {
+    const dir = makeTempDir();
+    mkdirSync(join(dir, ".claude"), { recursive: true });
+    writeFileSync(
+      join(dir, ".claude", "settings.local.json"),
+      `${JSON.stringify({
+        hooks: {
+          Notification: [
+            {
+              matcher: "",
+              hooks: [
+                {
+                  type: "command",
+                  command: "echo custom-notification",
+                },
+              ],
+            },
+          ],
+          Stop: [
+            {
+              hooks: [
+                { type: "command", command: "echo old-stop" },
+              ],
+            },
+          ],
+        },
+      })}\n`,
+      "utf8",
+    );
+
+    runCliInDir(dir, ["init", "-y"]);
+
+    const settings = JSON.parse(
+      readFileSync(join(dir, ".claude", "settings.local.json"), "utf8"),
+    ) as {
+      hooks: Record<string, { hooks: { type: string; command: string }[] }[]>;
+    };
+
+    expect(settings.hooks.Notification?.[0]?.hooks?.[0]?.command).toBe(
+      "echo custom-notification",
+    );
+    expect(settings.hooks.Stop?.[0]?.hooks?.[0]?.command).toContain("capture");
+  });
+
   it("writes AGENTS.md with key sections", () => {
     const dir = makeTempDir();
     runCliInDir(dir, ["init", "-y"]);
 
     const agents = readFileSync(join(dir, "AGENTS.md"), "utf8");
+    expect(agents).toContain(">>> hermes-repo agents");
     expect(agents).toContain("记忆系统");
     expect(agents).toContain("captures");
     expect(agents).toContain("团队协作");
+  });
+
+  it("appends hermes block when AGENTS.md exists without hermes", () => {
+    const dir = makeTempDir();
+    writeFileSync(join(dir, "AGENTS.md"), "# Existing\n\nTeam rules here.\n", "utf8");
+    const { stdout } = runCliInDir(dir, ["init", "-y"]);
+    const agents = readFileSync(join(dir, "AGENTS.md"), "utf8");
+    expect(agents).toContain("# Existing");
+    expect(agents).toContain("Team rules here.");
+    expect(agents).toContain(">>> hermes-repo agents");
+    expect(agents).toContain("记忆系统");
+    expect(stdout).toMatch(/已追加/);
   });
 
   it("writes placeholder MEMORY.md", () => {
@@ -217,6 +364,7 @@ describe("init", () => {
     const gitignore = readFileSync(join(dir, ".gitignore"), "utf8");
     expect(gitignore).toContain(">>> hermes-repo memory");
     expect(gitignore).toContain(".memory/captures/");
+    expect(gitignore).toContain(".memory/llm.json");
     expect(gitignore).toContain("!.memory/topics/");
     expect(gitignore).toContain("!.memory/MEMORY.md");
     expect(gitignore).toContain("<<< hermes-repo memory");
@@ -247,17 +395,76 @@ describe("init", () => {
     expect(result.stderr ?? "").toMatch(/requires -y/i);
   });
 
-  it("force overwrites scaffold", () => {
+  it("force refreshes only hermes block in AGENTS.md", () => {
     const dir = makeTempDir();
+    writeFileSync(join(dir, "AGENTS.md"), "# Custom header\n", "utf8");
     runCliInDir(dir, ["init", "-y"]);
 
     const agentsPath = join(dir, "AGENTS.md");
-    writeFileSync(agentsPath, "# tampered\n", "utf8");
+    let agents = readFileSync(agentsPath, "utf8");
+    expect(agents).toContain("# Custom header");
+    const start = agents.indexOf("<!-- >>> hermes-repo agents");
+    const end = agents.indexOf("<!-- <<< hermes-repo agents -->") +
+      "<!-- <<< hermes-repo agents -->".length;
+    agents =
+      agents.slice(0, start) +
+      "<!-- >>> hermes-repo agents (do not edit this block manually) -->\n## STALE BLOCK\n<!-- <<< hermes-repo agents -->" +
+      agents.slice(end);
+    writeFileSync(agentsPath, agents, "utf8");
 
-    runCliInDir(dir, ["init", "-y", "-f"]);
-    const agents = readFileSync(agentsPath, "utf8");
-    expect(agents).toContain("记忆系统");
-    expect(agents).not.toBe("# tampered\n");
+    const { stdout } = runCliInDir(dir, ["init", "-y", "-f"]);
+    const after = readFileSync(agentsPath, "utf8");
+    expect(after).toContain("# Custom header");
+    expect(after).not.toContain("## STALE BLOCK");
+    expect(after).toContain("记忆系统");
+    expect(stdout).toMatch(/已刷新 hermes 块/);
+  });
+
+  it("skips existing llm.json when writeLlmJson is false", () => {
+    const dir = makeTempDir();
+    ensureMemoryTree(dir);
+    const llmPath = join(dir, ".memory/llm.json");
+    writeFileSync(
+      llmPath,
+      `${JSON.stringify({
+        enabled: true,
+        provider: "openai",
+        baseUrl: "https://old.example/v1",
+        model: "old-model",
+        apiKey: "keep-me",
+      })}\n`,
+      "utf8",
+    );
+
+    const report = {
+      targetDir: dir,
+      assistants: ["claude-code"] as const,
+      files: [] as { path: string; action: string }[],
+      warnings: [] as string[],
+    };
+    writeScaffoldFiles(
+      dir,
+      {
+        targetDir: dir,
+        force: false,
+        includeExampleTemplates: false,
+        assistants: ["claude-code"],
+        cancelled: false,
+        llm: { enabled: true, apiKey: "would-overwrite" },
+        writeLlmJson: false,
+      },
+      report,
+    );
+
+    const llm = JSON.parse(readFileSync(llmPath, "utf8")) as {
+      apiKey: string;
+      model: string;
+    };
+    expect(llm.apiKey).toBe("keep-me");
+    expect(llm.model).toBe("old-model");
+    expect(
+      report.files.find((f) => f.path === ".memory/llm.json")?.action,
+    ).toBe("skipped");
   });
 
   it("optional templates skipped", async () => {

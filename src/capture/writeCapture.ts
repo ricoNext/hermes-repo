@@ -1,13 +1,17 @@
 import { existsSync, mkdirSync, readdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { memoryPath } from "../init/paths.js";
-import type { CaptureMemoryType, ParsedSession } from "./types.js";
+import type { FormattedCapture } from "./formatCapture.js";
+import type { CaptureMemoryType } from "./types.js";
 
 function todayString(): string {
   return new Date().toISOString().slice(0, 10);
 }
 
-function nextCaptureFilename(repoRoot: string, type: CaptureMemoryType): string {
+export function nextCaptureFilename(
+  repoRoot: string,
+  type: CaptureMemoryType,
+): string {
   const dir = memoryPath(repoRoot, "captures", type);
   mkdirSync(dir, { recursive: true });
   const date = todayString();
@@ -27,47 +31,58 @@ function nextCaptureFilename(repoRoot: string, type: CaptureMemoryType): string 
   return `capture-${date}-${seq}.md`;
 }
 
-function buildBody(session: ParsedSession): string {
-  const recent = session.messages.slice(-6);
-  const context = recent
-    .map((m) => `**${m.role}**: ${m.text.slice(0, 500)}`)
-    .join("\n\n");
+function formatTags(tags: string[]): string {
+  return tags.map((t) => JSON.stringify(t)).join(", ");
+}
 
-  return `## 上下文
-
-自动捕获自 Claude Code 会话 \`${session.sessionId}\`。
-
-## 发现
-
-${context || "（无提取内容）"}
-
-## 影响
-
-（待 consolidate 或人工补充）
-`;
+export function renderCaptureMarkdown(
+  formatted: FormattedCapture,
+  date: string,
+): string {
+  const lines = [
+    "---",
+    `type: ${formatted.type}`,
+    `date: ${date}`,
+    `session: ${formatted.sessionId}`,
+    `tags: [${formatTags(formatted.tags)}]`,
+    `scope: ${formatted.scope}`,
+    "confidence: pending",
+  ];
+  if (formatted.llmUpgradedAt) {
+    lines.push(`llmUpgradedAt: ${formatted.llmUpgradedAt}`);
+  }
+  if (formatted.type === "procedural") {
+    const stepCount = (formatted.bodyMarkdown.match(/^## 步骤/m) ? 1 : 0) +
+      (formatted.bodyMarkdown.split("\n").filter((l) => /^\d+\./.test(l)).length);
+    lines.push(`step_count: ${stepCount || 0}`);
+    lines.push("repeat_count: 1");
+  }
+  lines.push("---", "", formatted.bodyMarkdown);
+  return `${lines.join("\n")}\n`;
 }
 
 export function writeCaptureFile(
   repoRoot: string,
-  session: ParsedSession,
-  type: CaptureMemoryType,
-): { absolutePath: string; filename: string } {
-  const filename = nextCaptureFilename(repoRoot, type);
-  const absolutePath = memoryPath(repoRoot, "captures", type, filename);
+  formatted: FormattedCapture,
+  filename?: string,
+): { absolutePath: string; filename: string; type: CaptureMemoryType } {
+  const type = formatted.type;
+  const name = filename ?? nextCaptureFilename(repoRoot, type);
+  const absolutePath = memoryPath(repoRoot, "captures", type, name);
   const date = todayString();
-
-  const content = `---
-type: ${type}
-date: ${date}
-session: ${session.sessionId}
-tags: [auto-capture, claude-code]
-scope: all
-confidence: pending
----
-
-${buildBody(session)}
-`;
-
+  const content = renderCaptureMarkdown(formatted, date);
+  mkdirSync(join(absolutePath, ".."), { recursive: true });
   writeFileSync(absolutePath, content, "utf8");
-  return { absolutePath, filename };
+  return { absolutePath, filename: name, type };
+}
+
+/** Replace capture file content in place (LLM upgrade) */
+export function replaceCaptureFile(
+  repoRoot: string,
+  captureFile: string,
+  formatted: FormattedCapture,
+): void {
+  const absolutePath = join(repoRoot, captureFile);
+  const date = todayString();
+  writeFileSync(absolutePath, renderCaptureMarkdown(formatted, date), "utf8");
 }

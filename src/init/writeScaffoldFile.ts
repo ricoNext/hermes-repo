@@ -6,6 +6,8 @@ import type { InitReport, InitResolvedOptions } from "./types.js";
 import { EXAMPLE_TEMPLATE_FILES, memoryPath } from "./paths.js";
 import { renderTemplate, resolveTemplatePath } from "./templateDir.js";
 import { mergeConfigForInit } from "./mergeConfig.js";
+import { mergeAgentsMd } from "./mergeAgentsMd.js";
+import { writeLlmJson } from "./mergeLlmConfig.js";
 import { shouldWriteFile, writeIfAllowed } from "./scaffoldWrite.js";
 
 export { shouldWriteFile } from "./scaffoldWrite.js";
@@ -59,6 +61,13 @@ export function writeScaffoldFiles(
 
   writeConfigJson(report, repoRoot, assistants);
 
+  if (opts.writeLlmJson) {
+    const llmAction = writeLlmJson(repoRoot, opts.llm);
+    report.files.push({ path: ".memory/llm.json", action: llmAction });
+  } else {
+    report.files.push({ path: ".memory/llm.json", action: "skipped" });
+  }
+
   writeIfAllowed(
     report,
     memoryPath(repoRoot, "MEMORY.md"),
@@ -83,13 +92,10 @@ export function writeScaffoldFiles(
     force,
   );
 
-  writeIfAllowed(
-    report,
-    join(repoRoot, "AGENTS.md"),
-    "AGENTS.md",
-    renderTemplate("AGENTS.md.tpl"),
-    force,
-  );
+  report.files.push({
+    path: "AGENTS.md",
+    action: mergeAgentsMd(repoRoot, force),
+  });
 
   for (const id of assistants) {
     getAdapter(id).write({ repoRoot, force, report });

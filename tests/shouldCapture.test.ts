@@ -31,6 +31,13 @@ describe("shouldCapture", () => {
     expect(shouldCapture(session)).toBe(true);
   });
 
+  it("rejects greeting-only session", () => {
+    const session = parseJsonlFile(
+      join(fixturesDir, "session-greeting-only.jsonl"),
+    );
+    expect(shouldCapture(session)).toBe(false);
+  });
+
   it("rejects no file changes without signals", () => {
     const session = parseJsonlFile(
       join(fixturesDir, "session-no-files-correction.jsonl"),

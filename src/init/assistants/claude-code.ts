@@ -1,24 +1,21 @@
-import { mkdirSync } from "node:fs";
+import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import { renderTemplate } from "../templateDir.js";
-import { writeIfAllowed } from "../scaffoldWrite.js";
+import {
+  CLAUDE_SETTINGS_LOCAL_REL,
+  claudeSettingsLocalPath,
+  mergeClaudeLocalSettings,
+} from "../mergeClaudeSettings.js";
 import type { AssistantAdapter, WriteContext } from "./types.js";
 
 export const claudeCodeAdapter: AssistantAdapter = {
   id: "claude-code",
   label: "Claude Code（Stop / SessionStart hooks）",
   available: true,
-  scaffoldPaths: [".claude/hooks.json"],
+  scaffoldPaths: [CLAUDE_SETTINGS_LOCAL_REL],
   write(ctx: WriteContext): void {
-    const hooksDir = join(ctx.repoRoot, ".claude");
-    mkdirSync(hooksDir, { recursive: true });
-    const hooksPath = join(hooksDir, "hooks.json");
-    writeIfAllowed(
-      ctx.report,
-      hooksPath,
-      ".claude/hooks.json",
-      renderTemplate("hooks.json.tpl"),
-      ctx.force,
-    );
+    mkdirSync(join(ctx.repoRoot, ".claude"), { recursive: true });
+    const { content, action } = mergeClaudeLocalSettings(ctx.repoRoot);
+    writeFileSync(claudeSettingsLocalPath(ctx.repoRoot), content, "utf8");
+    ctx.report.files.push({ path: CLAUDE_SETTINGS_LOCAL_REL, action });
   },
 };

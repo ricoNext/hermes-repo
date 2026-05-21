@@ -67,13 +67,13 @@ describe("capture", () => {
     expect(result.status).toBe(0);
   });
 
-  it("writes capture from fixture jsonl", () => {
+  it("writes capture from fixture jsonl", async () => {
     const dir = makeRepo();
     const fixture = join(fixturesDir, "session-rich.jsonl");
     const prev = process.env.HERMES_SESSION_JSONL;
     process.env.HERMES_SESSION_JSONL = fixture;
 
-    const captureResult = runCapture({ cwd: dir });
+    const captureResult = await runCapture({ cwd: dir });
 
     process.env.HERMES_SESSION_JSONL = prev;
 
@@ -98,27 +98,28 @@ describe("capture", () => {
     expect(index.sessions.length).toBe(1);
   });
 
-  it("no-files-correction fixture captures", () => {
+  it("no-files-correction fixture captures", async () => {
     const dir = makeRepo();
     const fixture = join(fixturesDir, "session-no-files-correction.jsonl");
     const prev = process.env.HERMES_SESSION_JSONL;
     process.env.HERMES_SESSION_JSONL = fixture;
-    const captureResult = runCapture({ cwd: dir });
+    const captureResult = await runCapture({ cwd: dir });
     process.env.HERMES_SESSION_JSONL = prev;
     expect(captureResult.written).toBe(true);
   });
 
-  it("skips when claude-code not in assistants", () => {
+  it("skips when no capture assistant in config", async () => {
     const dir = makeRepo([]);
     const fixture = join(fixturesDir, "session-rich.jsonl");
     const prev = process.env.HERMES_SESSION_JSONL;
     process.env.HERMES_SESSION_JSONL = fixture;
-    const captureResult = runCapture({ cwd: dir });
+    const captureResult = await runCapture({ cwd: dir });
     process.env.HERMES_SESSION_JSONL = prev;
     expect(captureResult.written).toBe(false);
+    expect(captureResult.reason).toMatch(/no capture assistant/i);
   });
 
-  it("logs skip to stderr when debug enabled and no jsonl", () => {
+  it("logs skip to stderr when debug enabled and no jsonl", async () => {
     const dir = makeRepo(["claude-code"], true);
     const prevJsonl = process.env.HERMES_SESSION_JSONL;
     const prevClaudeHome = process.env.CLAUDE_CONFIG_DIR;
@@ -128,7 +129,7 @@ describe("capture", () => {
     mkdirSync(join(emptyClaudeHome, "projects"), { recursive: true });
     process.env.CLAUDE_CONFIG_DIR = emptyClaudeHome;
     const spy = vi.spyOn(console, "error").mockImplementation(() => {});
-    runCapture({ cwd: dir });
+    await runCapture({ cwd: dir });
     expect(spy).toHaveBeenCalledWith(
       expect.stringContaining(
         "hermes-repo [capture] skip: no session jsonl found",
@@ -147,12 +148,12 @@ describe("capture", () => {
     }
   });
 
-  it("dry-run does not write files", () => {
+  it("dry-run does not write files", async () => {
     const dir = makeRepo();
     const fixture = join(fixturesDir, "session-rich.jsonl");
     const prev = process.env.HERMES_SESSION_JSONL;
     process.env.HERMES_SESSION_JSONL = fixture;
-    const captureResult = runCapture({ cwd: dir, dryRun: true });
+    const captureResult = await runCapture({ cwd: dir, dryRun: true });
     process.env.HERMES_SESSION_JSONL = prev;
     expect(captureResult.written).toBe(false);
     const episodicDir = join(dir, ".memory", "captures", "episodic");

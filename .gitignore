@@ -144,3 +144,5 @@ vite.config.ts.timestamp-*
 
 # hermes-repo project memory (local)
 .memory/
+
+.cursor/

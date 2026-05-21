@@ -11,6 +11,9 @@ export const MEMORY_SUBDIRS = [
   "refs",
   "topics",
   "skills",
+  "promote",
+  "promote/staging",
+  "promote/staging/topics",
   "team/decisions",
   "team/conflict-resolutions",
   "templates",
@@ -25,6 +28,7 @@ export const GITKEEP_DIRS = [
 ] as const;
 
 export const EXAMPLE_TEMPLATE_FILES = [
+  "llm.json.example",
   "capture-semantic.example.md",
   "capture-episodic.example.md",
   "capture-procedural.example.md",
@@ -37,7 +41,7 @@ export const SCAFFOLD_RELATIVE_PATHS = [
   ".memory/sessions/index.json",
   ".memory/team/steward-log.md",
   "AGENTS.md",
-  ".claude/hooks.json",
+  ".claude/settings.local.json",
 ] as const;
 
 export function memoryPath(root: string, ...segments: string[]): string {

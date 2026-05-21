@@ -1,10 +1,15 @@
 # >>> hermes-repo memory (do not edit this block manually)
 # 个人层 — 不提交
 .memory/captures/
+.memory/llm.json
 .memory/sessions/
 .memory/refs/
 .memory/personal/
 .memory/hermes-debug.log
+.memory/consolidate-state.json
+.memory/.consolidate.lock
+.memory/skill-usage.json
+.memory/promote/
 
 # 团队层 — 提交
 !.memory/topics/

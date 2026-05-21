@@ -84,6 +84,28 @@ describe("inject", () => {
     expect(logs.join("")).toContain("项目记忆");
   });
 
+  it("outputs additional_context JSON for cursor hook mode", () => {
+    const dir = makeRepo();
+    writeFileSync(
+      join(dir, ".memory", "MEMORY.md"),
+      "# 项目记忆\n",
+      "utf8",
+    );
+
+    const logs: string[] = [];
+    const origWrite = process.stdout.write.bind(process.stdout);
+    process.stdout.write = ((chunk: string | Uint8Array) => {
+      logs.push(String(chunk));
+      return true;
+    }) as typeof process.stdout.write;
+
+    runInject(dir, { cursorHookOutput: true });
+    process.stdout.write = origWrite;
+
+    const parsed = JSON.parse(logs.join("")) as { additional_context: string };
+    expect(parsed.additional_context).toContain("项目记忆");
+  });
+
   it("truncates long MEMORY.md", () => {
     const dir = makeRepo();
     writeFileSync(

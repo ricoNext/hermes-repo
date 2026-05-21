@@ -1,10 +1,15 @@
 import type { AssistantAdapter, AssistantId } from "./types.js";
 import { claudeCodeAdapter } from "./claude-code.js";
+import { codebuddyAdapter } from "./codebuddy.js";
 import { cursorAdapter } from "./cursor.js";
 
 export const DEFAULT_ASSISTANT_IDS: AssistantId[] = ["claude-code"];
 
-const ALL_ADAPTERS: AssistantAdapter[] = [claudeCodeAdapter, cursorAdapter];
+const ALL_ADAPTERS: AssistantAdapter[] = [
+  claudeCodeAdapter,
+  cursorAdapter,
+  codebuddyAdapter,
+];
 
 const ADAPTER_BY_ID = new Map<AssistantId, AssistantAdapter>(
   ALL_ADAPTERS.map((a) => [a.id, a]),

@@ -14,8 +14,12 @@
 
 （consolidate 后自动填充）
 
+## 可用技能
+
+（consolidate 后从 procedural 晋升填充）
+
 ## 检索提示
 
-- 全文检索: `npx @riconext/hermes-repo search <关键词>`
+- 手动整理记忆: `npx @riconext/hermes-repo flush`
 - 查看捕获: `ls .memory/captures/` 或 `cat .memory/captures/<type>/<文件>.md`
 - 查看主题: `ls .memory/topics/`

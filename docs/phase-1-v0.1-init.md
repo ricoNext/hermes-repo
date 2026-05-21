@@ -29,7 +29,7 @@
 
 1. 创建符合 `storage.backend: file` 的完整 `.memory/` 目录树（含 `config.json`、占位 `MEMORY.md`）。
 2. 写入精简版 `AGENTS.md`（基于设计模板，保留记忆系统、检索、捕获、团队协作核心段落）。
-3. 写入 `.claude/hooks.json`：`Stop` → `capture`，`SessionStart` → `inject`（命令本身 Phase 2 实现）。
+3. 合并写入 `.claude/settings.local.json` 的 `hooks`：`Stop` → `capture`，`SessionStart` → `inject`（Phase 2 实现；Claude 不读独立 `hooks.json`）。
 4. 向项目 `.gitignore` **合并**个人层忽略 + 团队层放行规则（带标记块，可重复执行）。
 5. 支持交互模式（`@inquirer/prompts`）与非交互 `-y`；**非 TTY 且无 `-y` 时必须失败并提示**。
 6. **幂等**：重复 `init` 不破坏已有用户数据；默认跳过已存在脚手架文件，可选 `--force` 覆盖；**例外**：`.memory/config.json` 每次 `init` 均合并写入（见 §4 与 [设计文档 config 写入策略](hermes-repo-design.md)）。
@@ -45,7 +45,7 @@ flowchart TD
   F --> G[解析 targetDir 默认 cwd]
   G --> H[创建 .memory 目录树]
   H --> I[写入 config.json / MEMORY.md / 可选 templates]
-  I --> J[写入 AGENTS.md / .claude/hooks.json]
+  I --> J[写入 AGENTS.md / .claude/settings.local.json]
   J --> K[合并 .gitignore 标记块]
   K --> L[stdout 摘要: created / skipped]
 ```
@@ -110,7 +110,7 @@ program
 │   └── .archive/
 ├── AGENTS.md
 └── .claude/                    # 仅当 assistants 含 claude-code
-    └── hooks.json
+    └── settings.local.json
 ```
 
 **按 `assistants` 条件创建**：未选中的助手不写入其 hooks；v0.1.1 不删除已存在但未选中的 hooks 文件。
@@ -163,7 +163,7 @@ program
 
 **省略或一句带过**：过长 promote PR 细节（链到 `templates/PROMOTE_PR.md`）。
 
-### 7. `.claude/hooks.json`
+### 7. `.claude/settings.local.json`（hooks）
 
 ```json
 {
@@ -344,7 +344,7 @@ hermes-repo/
 | 1 | `init -y creates full tree` | exit 0；目录均存在；`sessions/index.json` 可解析 |
 | 2 | `writes config.json v1 file backend` | `version===1`，`storage.backend==="file"`，`debug===false`，无 `mcp` |
 | 2b | `second init overwrites config.json` | 二次 init 合并 `assistants` / `debug`；报告 overwritten |
-| 3 | `writes hooks.json` | 含 Stop/SessionStart 与 capture/inject |
+| 3 | `writes settings.local.json` | 含 Stop/SessionStart 与 capture/inject |
 | 4 | `writes AGENTS.md with key sections` | 含 `记忆系统`、`captures`、`团队协作` |
 | 5 | `writes placeholder MEMORY.md` | 含 `项目记忆`、`检索提示` |
 | 6 | `merges gitignore block` | 标记块与个人/团队规则正确 |
@@ -360,7 +360,7 @@ hermes-repo/
 ## 验收标准（Done 定义）
 
 1. `bun run build` 后 `dist/templates/` 与源码 `templates/` 一致。
-2. 空目录 `init -y` 生成完整树 + 根级 `AGENTS.md`、`.claude/hooks.json`。
+2. 空目录 `init -y` 生成完整树 + 根级 `AGENTS.md`、`.claude/settings.local.json`（hooks）。
 3. `config.json` 符合 v0.1 schema（仅 `file` backend）。
 4. hooks 指向 `capture` / `inject`（命令未实现属预期）。
 5. 项目 `.gitignore` 含 hermes-repo 标记块且规则正确。
@@ -389,7 +389,7 @@ hermes-repo/
 
 | Phase 1 交付 | Phase 2（v0.2）消费方式 |
 |--------------|-------------------------|
-| `.claude/hooks.json` → `capture` | 实现 `capture`：读 JSONL、过滤、写 `captures/{type}/` |
+| `.claude/settings.local.json` → `capture` | 实现 `capture`：读 JSONL、过滤、写 `captures/{type}/` |
 | `sessions/index.json` | capture 写入会话索引 |
 | `config.json` `storage.backend: file` | 本地文件后端 |
 | `captures/{semantic,episodic,procedural}/` | 直接落盘路径 |

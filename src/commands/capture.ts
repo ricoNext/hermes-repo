@@ -1,4 +1,4 @@
-import { readHookTranscriptPathSync } from "../capture/claude-code/resolveSession.js";
+import { readHookInputSync } from "../capture/hookInput.js";
 import { runCapture } from "../capture/runCapture.js";
 import { configureDebugLogging } from "../config/debugLog.js";
 import { loadRepoContext } from "../config/readConfig.js";
@@ -14,14 +14,15 @@ export function runCaptureCommand(opts: CaptureCommandOptions): void {
   const ctx = loadRepoContext(opts.cwd);
   const debug = ctx?.config.debug === true;
   configureDebugLogging(ctx?.repoRoot ?? null, debug);
-  const transcriptPath = readHookTranscriptPathSync();
+  const hookInput = readHookInputSync();
 
-  finalizeHookCommand(() => {
-    runCapture({
+  finalizeHookCommand(async () => {
+    await runCapture({
       cwd: opts.cwd,
       dryRun: opts.dryRun,
       strict: opts.strict,
-      transcriptPath: transcriptPath ?? undefined,
+      hookInput,
+      transcriptPath: hookInput?.transcriptPath,
     });
   }, opts.strict, debug);
 }

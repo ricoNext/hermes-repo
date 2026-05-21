@@ -22,8 +22,27 @@ describe("assistants registry", () => {
     expect(() => parseToolsArg("unknown")).toThrow(/unknown/i);
   });
 
-  it("parseToolsArg rejects unavailable cursor", () => {
-    expect(() => parseToolsArg("cursor")).toThrow(/not available/i);
+  it("parseToolsArg accepts cursor", () => {
+    expect(parseToolsArg("cursor")).toEqual(["cursor"]);
+  });
+
+  it("parseToolsArg accepts claude-code,cursor", () => {
+    expect(parseToolsArg("claude-code,cursor")).toEqual([
+      "claude-code",
+      "cursor",
+    ]);
+  });
+
+  it("parseToolsArg accepts codebuddy", () => {
+    expect(parseToolsArg("codebuddy")).toEqual(["codebuddy"]);
+  });
+
+  it("parseToolsArg accepts claude-code,cursor,codebuddy", () => {
+    expect(parseToolsArg("claude-code,cursor,codebuddy")).toEqual([
+      "claude-code",
+      "cursor",
+      "codebuddy",
+    ]);
   });
 });
 

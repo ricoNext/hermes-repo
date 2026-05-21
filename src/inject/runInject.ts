@@ -4,7 +4,10 @@ import { loadRepoContext } from "../config/readConfig.js";
 import { memoryPath } from "../init/paths.js";
 import { INJECT_MAX_CHARS } from "./constants.js";
 
-export function runInject(cwd?: string): { injected: boolean; chars: number } {
+export function runInject(
+  cwd?: string,
+  options?: { cursorHookOutput?: boolean },
+): { injected: boolean; chars: number } {
   const ctx = loadRepoContext(cwd);
   if (!ctx) {
     return { injected: false, chars: 0 };
@@ -27,9 +30,15 @@ export function runInject(cwd?: string): { injected: boolean; chars: number } {
     content = `${content.slice(0, INJECT_MAX_CHARS)}\n\n...(truncated)`;
   }
 
-  process.stdout.write(content);
-  if (!content.endsWith("\n")) {
-    process.stdout.write("\n");
+  if (options?.cursorHookOutput) {
+    process.stdout.write(
+      `${JSON.stringify({ additional_context: content })}\n`,
+    );
+  } else {
+    process.stdout.write(content);
+    if (!content.endsWith("\n")) {
+      process.stdout.write("\n");
+    }
   }
 
   debugFromContext(ctx, "inject", `ok: injected ${content.length} chars`);

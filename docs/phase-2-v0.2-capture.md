@@ -34,7 +34,7 @@
 | `Stop` | `npx @riconext/hermes-repo capture` |
 | `SessionStart` | `npx @riconext/hermes-repo inject` |
 
-已有仓库若仍为旧版「字符串简写」hooks，请重新 `init -y`（或 `--force` 覆盖 `.claude/hooks.json`）或按上表手动改格式。
+`init` 将 hooks 合并写入 **`.claude/settings.local.json`**（Claude Code 不读取独立的 `.claude/hooks.json`）。已有仓库请重新 `init -y`；可在 Claude 中用 `/hooks` 确认 Stop / SessionStart 已加载，并删除无效的 `.claude/hooks.json`。
 
 Hook **不传 CLI 参数**；工作目录为仓库根（Claude Code 启动目录）。可选 `-C, --cwd` 仅用于本地调试。
 

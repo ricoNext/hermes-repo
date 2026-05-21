@@ -55,6 +55,39 @@ function toolName(record: Record<string, unknown>): string {
   return "";
 }
 
+/** Cursor 等助手：tool_use 嵌在 message.content 数组内 */
+function countNestedTools(record: Record<string, unknown>): {
+  toolCalls: number;
+  fileChanges: number;
+} {
+  let toolCalls = 0;
+  let fileChanges = 0;
+  const message = record.message;
+  if (!message || typeof message !== "object") {
+    return { toolCalls, fileChanges };
+  }
+  const content = (message as Record<string, unknown>).content;
+  if (!Array.isArray(content)) {
+    return { toolCalls, fileChanges };
+  }
+  for (const part of content) {
+    if (!part || typeof part !== "object") {
+      continue;
+    }
+    const p = part as Record<string, unknown>;
+    const t = String(p.type ?? "").toLowerCase();
+    if (t !== "tool_use" && t !== "tool") {
+      continue;
+    }
+    toolCalls += 1;
+    const name = typeof p.name === "string" ? p.name : "";
+    if (FILE_CHANGE_TOOLS.test(name)) {
+      fileChanges += 1;
+    }
+  }
+  return { toolCalls, fileChanges };
+}
+
 export function parseJsonlFile(jsonlPath: string): ParsedSession {
   const sessionId = basename(jsonlPath, ".jsonl");
   const raw = readFileSync(jsonlPath, "utf8");
@@ -75,6 +108,9 @@ export function parseJsonlFile(jsonlPath: string): ParsedSession {
         }
         continue;
       }
+      const nested = countNestedTools(record);
+      toolCalls += nested.toolCalls;
+      fileChanges += nested.fileChanges;
       const role = inferRole(record);
       const text = extractText(record);
       if (text) {
