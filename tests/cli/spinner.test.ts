@@ -1,5 +1,25 @@
+import { Writable } from "node:stream";
 import { describe, expect, it, vi, afterEach } from "vitest";
 import { withSpinnerProgress } from "../../src/cli/spinner.js";
+
+function mockWritable(opts: {
+  tty?: boolean;
+  onWrite?: (chunk: string) => void;
+}): Writable {
+  const stream = new Writable({
+    write(chunk, _encoding, callback) {
+      opts.onWrite?.(String(chunk));
+      callback();
+    },
+  });
+  if (opts.tty) {
+    Object.defineProperty(stream, "isTTY", {
+      value: true,
+      configurable: true,
+    });
+  }
+  return stream;
+}
 
 describe("cli spinner", () => {
   afterEach(() => {
@@ -8,7 +28,7 @@ describe("cli spinner", () => {
 
   it("logs start and done on non-TTY stderr", async () => {
     const stderrSpy = vi.spyOn(console, "error").mockImplementation(() => {});
-    vi.spyOn(process.stderr, "isTTY", "get").mockReturnValue(false);
+    const stream = mockWritable({ tty: false });
 
     const n = await withSpinnerProgress(
       "处理中…",
@@ -17,6 +37,7 @@ describe("cli spinner", () => {
         return 42;
       },
       () => ({ message: "完成", status: "success" }),
+      stream,
     );
 
     expect(n).toBe(42);
@@ -26,11 +47,10 @@ describe("cli spinner", () => {
   });
 
   it("writes animated frames on TTY stderr", async () => {
-    vi.spyOn(process.stderr, "isTTY", "get").mockReturnValue(true);
     const writes: string[] = [];
-    vi.spyOn(process.stderr, "write").mockImplementation((chunk) => {
-      writes.push(String(chunk));
-      return true;
+    const stream = mockWritable({
+      tty: true,
+      onWrite: (chunk) => writes.push(chunk),
     });
 
     await withSpinnerProgress(
@@ -40,6 +60,7 @@ describe("cli spinner", () => {
         return true;
       },
       () => ({ message: "好了", status: "success" }),
+      stream,
     );
 
     const joined = writes.join("");
