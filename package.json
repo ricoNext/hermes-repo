@@ -1,6 +1,6 @@
 {
   "name": "@riconext/hermes-repo",
-  "version": "0.13.0",
+  "version": "0.13.2",
   "description": "跨编程助手的项目级记忆系统",
   "type": "module",
   "license": "MIT",

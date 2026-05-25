@@ -2,8 +2,10 @@ import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 
 export type HookInput = {
-  /** Claude / CodeBuddy Stop hook */
+  /** Claude / CodeBuddy Stop hook（文件存在时已 resolve） */
   transcriptPath?: string;
+  /** hook stdin 中的 transcript_path 原值（无论文件是否存在） */
+  transcriptPathRaw?: string;
   hookEventName?: string;
   sessionId?: string;
   conversationId?: string;
@@ -62,6 +64,7 @@ export function parseHookInputJson(raw: string): HookInput | null {
 
     return {
       transcriptPath,
+      transcriptPathRaw: transcriptRaw,
       hookEventName: pickString(parsed, "hook_event_name", "hookEventName"),
       sessionId: pickString(parsed, "session_id", "sessionId"),
       conversationId: pickString(parsed, "conversation_id", "conversationId"),
@@ -90,7 +93,10 @@ export function isCodebuddyCaptureHook(hook: HookInput | null | undefined): bool
   if (!hook) {
     return false;
   }
-  return isTranscriptUnderAssistant(hook.transcriptPath, ".codebuddy");
+  return (
+    isTranscriptUnderAssistant(hook.transcriptPath, ".codebuddy") ||
+    isTranscriptUnderAssistant(hook.transcriptPathRaw, ".codebuddy")
+  );
 }
 
 export function isClaudeCaptureHook(hook: HookInput | null | undefined): boolean {

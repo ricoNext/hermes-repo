@@ -5,9 +5,41 @@ import type { ParsedSession, SessionMessage } from "../types.js";
 const FILE_CHANGE_TOOLS =
   /^(Write|Edit|MultiEdit|NotebookEdit|write|edit)$/i;
 
+/** CodeBuddy：跳过元数据行，避免干扰统计 */
+const SKIP_LINE_TYPES = new Set([
+  "file-history-snapshot",
+  "summary",
+  "function_call_result",
+]);
+
+function textFromContentParts(content: unknown): string {
+  if (!Array.isArray(content)) {
+    return "";
+  }
+  return content
+    .map((part) => {
+      if (!part || typeof part !== "object") {
+        return "";
+      }
+      const p = part as Record<string, unknown>;
+      if (typeof p.text === "string") {
+        return p.text;
+      }
+      return "";
+    })
+    .filter(Boolean)
+    .join("\n");
+}
+
 function extractText(record: Record<string, unknown>): string {
   if (typeof record.content === "string") {
     return record.content;
+  }
+  if (Array.isArray(record.content)) {
+    const top = textFromContentParts(record.content);
+    if (top) {
+      return top;
+    }
   }
   const message = record.message;
   if (message && typeof message === "object") {
@@ -16,14 +48,7 @@ function extractText(record: Record<string, unknown>): string {
       return msg.content;
     }
     if (Array.isArray(msg.content)) {
-      return msg.content
-        .map((part) => {
-          if (part && typeof part === "object" && "text" in part) {
-            return String((part as { text: string }).text);
-          }
-          return "";
-        })
-        .join("\n");
+      return textFromContentParts(msg.content);
     }
   }
   return "";
@@ -41,9 +66,14 @@ function inferRole(record: Record<string, unknown>): string {
   return "unknown";
 }
 
+function isSkippedLine(record: Record<string, unknown>): boolean {
+  const t = String(record.type ?? "").toLowerCase();
+  return SKIP_LINE_TYPES.has(t);
+}
+
 function isToolUse(record: Record<string, unknown>): boolean {
   const t = String(record.type ?? "").toLowerCase();
-  return t === "tool_use" || t === "tool";
+  return t === "tool_use" || t === "tool" || t === "function_call";
 }
 
 function toolName(record: Record<string, unknown>): string {
@@ -100,6 +130,9 @@ export function parseJsonlFile(jsonlPath: string): ParsedSession {
     if (!trimmed) continue;
     try {
       const record = JSON.parse(trimmed) as Record<string, unknown>;
+      if (isSkippedLine(record)) {
+        continue;
+      }
       if (isToolUse(record)) {
         toolCalls += 1;
         const name = toolName(record);

@@ -41,6 +41,20 @@ describe("hookInput", () => {
     );
     expect(isCodebuddyCaptureHook(hook)).toBe(true);
     expect(isClaudeCaptureHook(hook)).toBe(false);
+    expect(hook?.transcriptPathRaw).toBe(jsonl);
+  });
+
+  it("keeps transcriptPathRaw when file is missing", () => {
+    const raw = "/tmp/.codebuddy/projects/test/session.jsonl";
+    const hook = parseHookInputJson(
+      JSON.stringify({
+        hook_event_name: "Stop",
+        transcript_path: raw,
+      }),
+    );
+    expect(hook?.transcriptPath).toBeUndefined();
+    expect(hook?.transcriptPathRaw).toBe(raw);
+    expect(isCodebuddyCaptureHook(hook)).toBe(true);
   });
 
   it("parses Cursor stop payload", () => {

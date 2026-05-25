@@ -79,8 +79,9 @@ Hook **不传 CLI 参数**；工作目录为仓库根（Claude Code 启动目录
 `parseJsonl()` 兼容以下字段（见 `src/capture/claude-code/parseJsonl.ts`）：
 
 - `type: "user" | "assistant"` 或 `message.role`
-- 文本：`message.content` 字符串，或 `content[]` 中 `type: "text"` 块
-- 工具：`type: "tool_use"` 或 `message.content` 内 `tool_use` 块 → 计入 `toolCalls`
+- 文本：`message.content` 字符串，或 `content[]` 中 `text` / CodeBuddy `input_text` / `output_text` 块
+- 工具：`type: "tool_use"`、`function_call`（CodeBuddy），或 `message.content` 内 `tool_use` 块 → 计入 `toolCalls`
+- CodeBuddy 元数据行（`file-history-snapshot`、`summary`、`function_call_result`）跳过
 - 写文件：`tool_use.name` 为 `Write` / `Edit` / `MultiEdit` 等 → 计入 `fileChanges`
 
 格式变更时仅需替换 `parseJsonl` / resolver，测试 fixture 在 `tests/fixtures/*.jsonl`。
