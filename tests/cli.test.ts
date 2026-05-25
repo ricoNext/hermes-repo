@@ -1,9 +1,15 @@
+import { readFileSync } from "node:fs";
 import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 import { describe, expect, it } from "vitest";
 
 const rootDir = join(dirname(fileURLToPath(import.meta.url)), "..");
+const pkgVersion = (
+  JSON.parse(
+    readFileSync(join(rootDir, "package.json"), "utf8"),
+  ) as { version: string }
+).version;
 const cliPath = join(rootDir, "dist", "cli.js");
 
 function runCli(args: string[]): { stdout: string; stderr: string; status: number | null } {
@@ -19,10 +25,10 @@ function runCli(args: string[]): { stdout: string; stderr: string; status: numbe
 }
 
 describe("cli", () => {
-  it("prints version 0.13.0", () => {
+  it("prints package.json version", () => {
     const { stdout, status } = runCli(["--version"]);
     expect(status).toBe(0);
-    expect(stdout.trim()).toBe("0.13.0");
+    expect(stdout.trim()).toBe(pkgVersion);
   });
 
   it("prints help with description keywords when no args", () => {
