@@ -54,7 +54,6 @@
     "commander": "^13.1.0"
   },
   "devDependencies": {
-    "@changesets/changelog-github": "^0.7.0",
     "@changesets/cli": "^2.31.0",
     "@types/node": "^22.15.29",
     "tsup": "^8.5.0",

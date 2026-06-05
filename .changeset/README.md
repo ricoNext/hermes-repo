@@ -19,7 +19,7 @@ bun run release
 该命令会：
 
 - 根据已合并的 changeset 文件提升 `package.json` 中的 `version`；
-- 调用 `@changesets/changelog-github` 更新根目录 `CHANGELOG.md`；
+- 调用 Changesets 本地 changelog 生成器更新根目录 `CHANGELOG.md`；
 - 删除已被消费的 `.changeset/*.md`；
 - 同步 `bun.lock`；
 - 执行 typecheck 与测试；
@@ -32,4 +32,4 @@ bun run release
 ## 说明
 
 - `commit: false`：不会在本地替你 `git commit`，便于你在 CI 或 PR 里审阅 diff。
-- 若仓库重命名，请同步修改 `.changeset/config.json` 中的 `repo` 字段。
+- changelog 生成不依赖 GitHub token，适合本地 release 流程。
