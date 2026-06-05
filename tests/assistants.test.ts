@@ -37,11 +37,24 @@ describe("assistants registry", () => {
     expect(parseToolsArg("codebuddy")).toEqual(["codebuddy"]);
   });
 
+  it("parseToolsArg accepts codex", () => {
+    expect(parseToolsArg("codex")).toEqual(["codex"]);
+  });
+
   it("parseToolsArg accepts claude-code,cursor,codebuddy", () => {
     expect(parseToolsArg("claude-code,cursor,codebuddy")).toEqual([
       "claude-code",
       "cursor",
       "codebuddy",
+    ]);
+  });
+
+  it("parseToolsArg accepts codex with hook-based assistants", () => {
+    expect(parseToolsArg("claude-code,cursor,codebuddy,codex")).toEqual([
+      "claude-code",
+      "cursor",
+      "codebuddy",
+      "codex",
     ]);
   });
 });

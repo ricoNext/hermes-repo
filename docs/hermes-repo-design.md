@@ -34,25 +34,37 @@
                 │  init -y --scan  可选冷启动：扫描仓库生成首批 semantic 捕获 + flush
                 ▼
         在项目中创建/合并:
+        ├── .gitignore                # 合并 hermes 标记块（个人/团队层 git 放行规则）
         ├── .memory/
         │   ├── config.json           # version, storage, assistants[], debug
-        │   ├── llm.json              # [个人] 可选 LLM（gitignore，init 可生成示例）
+        │   ├── llm.json              # [个人] LLM 配置（gitignore，init 写入 enabled: false）
+        │   ├── MEMORY.md             # [团队] Level 0 摘要（≤约 2.2K 字符，inject 用）
         │   ├── captures/
         │   │   ├── semantic/         # [个人] 语义记忆
-        │   │   ├── episodic/       # [个人] 情景记忆
-        │   │   └── procedural/     # [个人] 流程记忆（*.md.promote 侧车可触发 Skill）
-        │   ├── topics/             # [团队] consolidate / promote --apply 写入
-        │   ├── skills/             # [团队] flush 内 promoteSkills → SKILL.md
-        │   ├── sessions/           # [个人] 会话索引 index.json
-        │   ├── refs/               # [个人] ref CLI 写入，flush 聚合后删除
-        │   ├── promote/            # [个人] promote --pr 草案（gitignore，含 staging/topics/）
-        │   ├── templates/        # [团队] PROMOTE_PR.md、capture 示例等
-        │   ├── team/               # [团队] decisions、conflict-resolutions、steward-log
-        │   ├── .archive/           # [个人] 生命周期归档捕获
-        │   ├── consolidate-state.json / .consolidate.lock  # [个人] flush 状态（gitignore）
-        │   ├── skill-usage.json    # [个人] 技能引用统计（gitignore）
-        │   └── MEMORY.md           # [团队] Level 0 摘要（≤约 2.2K 字符，inject 用）
-        ├── AGENTS.md               # 通用助手指令（init 合并 hermes 标记块）
+        │   │   ├── episodic/         # [个人] 情景记忆
+        │   │   └── procedural/       # [个人] 流程记忆（*.md.promote 侧车可触发 Skill）
+        │   ├── personal/             # [个人] 个人笔记/草稿
+        │   ├── sessions/
+        │   │   └── index.json        # [个人] 会话索引
+        │   ├── refs/                 # [个人] ref CLI 写入，flush 聚合后删除
+        │   ├── topics/               # [团队] 空目录 + .gitkeep；consolidate / promote --apply 写入
+        │   ├── skills/               # [团队] 空目录 + .gitkeep；flush 内 promoteSkills → SKILL.md
+        │   ├── promote/              # [个人] gitignore
+        │   │   └── staging/
+        │   │       └── topics/       # promote --pr 草案
+        │   ├── templates/            # [团队] init 默认复制示例模板（交互模式可取消）
+        │   │   ├── llm.json.example
+        │   │   ├── capture-semantic.example.md
+        │   │   ├── capture-episodic.example.md
+        │   │   ├── capture-procedural.example.md
+        │   │   └── PROMOTE_PR.md
+        │   ├── team/
+        │   │   ├── decisions/        # [团队] 空目录 + .gitkeep
+        │   │   ├── conflict-resolutions/  # [团队] 空目录 + .gitkeep
+        │   │   └── steward-log.md    # [团队] 记忆 steward 日志
+        │   └── .archive/             # [个人] 生命周期归档捕获
+        │   # 运行时生成（init 不创建）：consolidate-state.json、.consolidate.lock、skill-usage.json、hermes-debug.log
+        ├── AGENTS.md                 # 通用助手指令（init 合并 hermes 标记块）
         └── 按 config.assistants[] 写入 hooks（统一调用 CLI，内部路由）:
             .claude/settings.local.json    # claude-code: SessionStart→inject, Stop→capture
             .cursor/hooks.json             # cursor: sessionStart→inject, stop→capture

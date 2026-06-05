@@ -257,6 +257,51 @@ describe("init", () => {
     expect(config.assistants).toContain("codebuddy");
   });
 
+  it("init -y --tools codex writes .codex/config.toml", () => {
+    const dir = makeTempDir();
+    const { status, stdout } = runCliInDir(dir, [
+      "init",
+      "-y",
+      "--tools",
+      "codex",
+    ]);
+    expect(status).toBe(0);
+    expect(stdout).toMatch(/codex/);
+
+    const codexConfig = readFileSync(
+      join(dir, ".codex", "config.toml"),
+      "utf8",
+    );
+    expect(codexConfig).toContain(">>> hermes-repo codex");
+    expect(codexConfig).toContain("AGENTS.md");
+    expect(codexConfig).toContain("@riconext/hermes-repo search");
+
+    const config = JSON.parse(
+      readFileSync(join(dir, ".memory/config.json"), "utf8"),
+    ) as { assistants: string[] };
+    expect(config.assistants).toContain("codex");
+  });
+
+  it("merges codex config without dropping user settings", () => {
+    const dir = makeTempDir();
+    mkdirSync(join(dir, ".codex"), { recursive: true });
+    writeFileSync(
+      join(dir, ".codex", "config.toml"),
+      "model = \"gpt-5-codex\"\n\n[tools]\nweb_search = true\n",
+      "utf8",
+    );
+
+    runCliInDir(dir, ["init", "-y", "--tools", "codex"]);
+
+    const codexConfig = readFileSync(
+      join(dir, ".codex", "config.toml"),
+      "utf8",
+    );
+    expect(codexConfig).toContain('model = "gpt-5-codex"');
+    expect(codexConfig).toContain("[tools]");
+    expect(codexConfig).toContain(">>> hermes-repo codex");
+  });
+
   it("merges cursor hooks without dropping notification", () => {
     const dir = makeTempDir();
     mkdirSync(join(dir, ".cursor"), { recursive: true });
