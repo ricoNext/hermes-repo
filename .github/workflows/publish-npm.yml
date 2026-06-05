@@ -1,7 +1,6 @@
 # 在 npmjs.com 创建 Automation / Granular access token，
-# 在仓库 Settings -> Secrets and variables -> Actions 中添加 NPM_TOKEN，
-# 再推送与 package.json 版本一致的 tag：
-#   git tag v0.13.2 && git push origin v0.13.2
+# 在仓库 Settings -> Secrets and variables -> Actions 中添加 NPM_TOKEN。
+# 本 workflow 只负责发布本地 release 脚本推送的 v* tag。
 name: Publish to npm
 
 on:

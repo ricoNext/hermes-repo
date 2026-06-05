@@ -361,25 +361,17 @@ npx @riconext/hermes-repo flush
 
 ## 发布流程
 
-本仓库使用 Changesets 管理版本与 `CHANGELOG.md`，并通过 GitHub Actions 在推送 `v*` tag 时发布 npm。
+本仓库使用 Changesets 管理版本与 `CHANGELOG.md`。本地 `release` 脚本负责生成版本、创建 tag 并推送；GitHub Actions 只监听 `v*` tag 发布 npm 包。
 
 ```bash
 # 有用户可见改动时，随代码提交 changeset
 bun run changeset
 
-# 发版前生成 package.json 版本与 CHANGELOG.md
-bun run changeset:version
-
-# 本地验证
-bun run typecheck
-bun run test
-
-# 提交版本变更后，打与 package.json 一致的 tag
-git tag v0.14.0
-git push origin v0.14.0
+# 发版：生成 CHANGELOG/version，提交，创建 tag，并推送分支与 tag
+bun run release
 ```
 
-发布前需在 GitHub Actions secrets 中配置 `NPM_TOKEN`。详细说明见 [.changeset/README.md](.changeset/README.md)，自动发布 workflow 见 [.github/workflows/publish-npm.yml](.github/workflows/publish-npm.yml)。
+发布前需在 GitHub Actions secrets 中配置 `NPM_TOKEN`。详细说明见 [.changeset/README.md](.changeset/README.md)，npm 发布 workflow 见 [.github/workflows/publish-npm.yml](.github/workflows/publish-npm.yml)。
 
 ---
 
