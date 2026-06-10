@@ -11,6 +11,10 @@ export interface ParsedSession {
   text: string;
   fileChanges: number;
   toolCalls: number;
+
+  // 修复 2：CI/外部反馈信号
+  ciStatus?: "passed" | "failed" | "unknown";  // CI 结果
+  userEmoji?: "👍" | "👎" | "❓";              // 用户反应
 }
 
 export interface CaptureResult {
