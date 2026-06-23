@@ -1,5 +1,27 @@
 # Changelog
 
+## 0.15.1
+
+### Patch Changes
+
+- 修复 needsLlm 判断逻辑，增强 LLM 升级触发条件
+
+  **问题修复**:
+
+  - 新增 toolCalls 判断：工具调用 >= 8 次触发 LLM 升级
+  - 新增强信号判断：强信号（约定、决策）直接触发 LLM 升级
+  - 新增组合条件：覆盖中等复杂度场景
+    - messages >= 10 && toolCalls >= 5
+    - medium 信号 && fileChanges >= 2
+    - toolCalls >= 5 && fileChanges >= 1
+  - 新增综合分数判断：score >= 55 触发升级
+
+  **改进效果**:
+
+  - 重要约定和决策会被 LLM 提炼
+  - 复杂分析类会话（高工具调用、低文件修改）会被升级
+  - 中等复杂度会话不再被忽略
+
 ## 0.15.0
 
 ### Minor Changes
