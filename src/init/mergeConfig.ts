@@ -3,7 +3,17 @@ import type { AssistantId } from "./assistants/types.js";
 import type { InitFileAction } from "./types.js";
 import { memoryPath } from "./paths.js";
 
-/** init 每次都会写入的 config 字段（其余顶层 / storage 子字段保留） */
+/** v2: init 每次都会写入的完整 config 字段（已有自定义值优先保留） */
+const DEFAULT_LLM = {
+  enabled: false,
+  baseUrl: "https://api.openai.com/v1",
+  model: "gpt-4o",
+};
+
+const DEFAULT_CONSOLIDATE = {
+  autoArchiveDays: 30,
+};
+
 export function mergeConfigForInit(
   repoRoot: string,
   assistants: AssistantId[],
@@ -30,15 +40,27 @@ export function mergeConfigForInit(
       ? (existing.storage as Record<string, unknown>)
       : {};
 
+  // v2: 合并 llm 和 consolidate 字段（用户已配置的优先保留）
+  const prevLlm =
+    existing.llm && typeof existing.llm === "object" && !Array.isArray(existing.llm)
+      ? (existing.llm as Record<string, unknown>)
+      : {};
+  const prevConsolidate =
+    existing.consolidate && typeof existing.consolidate === "object" && !Array.isArray(existing.consolidate)
+      ? (existing.consolidate as Record<string, unknown>)
+      : {};
+
   const merged: Record<string, unknown> = {
     ...existing,
-    version: 1,
+    version: 2,
     storage: {
       ...prevStorage,
       backend: "file",
     },
     assistants,
     debug: existing.debug === true,
+    llm: { ...DEFAULT_LLM, ...prevLlm },
+    consolidate: { ...DEFAULT_CONSOLIDATE, ...prevConsolidate },
   };
 
   return {

@@ -24,10 +24,17 @@ describe("mergeConfigForInit", () => {
       version: number;
       assistants: string[];
       debug: boolean;
+      llm?: Record<string, unknown>;
+      consolidate?: Record<string, unknown>;
     };
-    expect(config.version).toBe(1);
+    expect(config.version).toBe(2); // v2: version=2
     expect(config.assistants).toEqual(["claude-code"]);
     expect(config.debug).toBe(false);
+    // v2: 包含 llm 和 consolidate 默认字段
+    expect(config.llm).toBeDefined();
+    expect(config.llm?.enabled).toBe(false);
+    expect(config.consolidate).toBeDefined();
+    expect(config.consolidate?.autoArchiveDays).toBe(30);
   });
 
   it("merges init fields into existing config and preserves debug true", () => {

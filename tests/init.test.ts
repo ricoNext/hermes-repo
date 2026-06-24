@@ -86,9 +86,12 @@ describe("init", () => {
     // sessions/index.json 可能不再由 v2 维护
     const config = JSON.parse(
       readFileSync(join(dir, ".memory/config.json"), "utf8"),
-    ) as { version: number; assistants: string[] };
-    expect(config.version).toBe(1);
+    ) as { version: number; assistants: string[]; llm?: unknown; consolidate?: unknown };
+    expect(config.version).toBe(2); // v2: version=2
     expect(Array.isArray(config.assistants)).toBe(true);
+    // v2: 包含 llm 和 consolidate 默认字段
+    expect(config.llm).toBeDefined();
+    expect(config.consolidate).toBeDefined();
   });
 
   it("writes config.json v1 file backend", () => {
@@ -103,7 +106,7 @@ describe("init", () => {
       assistants: string[];
       debug: boolean;
     };
-    expect(config.version).toBe(1);
+    expect(config.version).toBe(2); // v2: version=2
     expect(config.storage.backend).toBe("file");
     expect(config.storage.mcp).toBeUndefined();
     expect(config.assistants).toContain("claude-code");
