@@ -1,5 +1,4 @@
 import { commitCapture } from "../commitCapture.js";
-import { shouldCapture } from "../shouldCapture.js";
 import type { CaptureResult } from "../types.js";
 import { parseJsonlFile } from "../claude-code/parseJsonl.js";
 import { resolveCodebuddySessionJsonl } from "./resolveSession.js";
@@ -19,11 +18,12 @@ export async function runCodebuddyCapture(
     return { written: false, reason: "no codebuddy session found" };
   }
 
+  // v2: 始终捕获（去掉 shouldCapture 质量过滤），由 LLM 在 consolidate 时判断价值
   const session = parseJsonlFile(jsonlPath);
-  if (!shouldCapture(session)) {
+  if (session.messages.length <= 1 && session.toolCalls === 0) {
     return {
       written: false,
-      reason: `heuristic rejected (messages=${session.messages.length}, toolCalls=${session.toolCalls})`,
+      reason: "empty session (no messages or tool calls)",
       jsonlPath,
     };
   }

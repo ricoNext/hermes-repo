@@ -1,2 +1,2 @@
-/** Level 0 注入上限（参考设计文档 ~2.2K chars） */
-export const INJECT_MAX_CHARS = 2200;
+/** v2 两阶段注入：导航 + 规则全文，目标 ~8K chars（含 rules 全文） */
+export const INJECT_MAX_CHARS = 8000;

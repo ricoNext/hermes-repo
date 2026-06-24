@@ -5,13 +5,11 @@ import type { AssistantId } from "../init/assistants/types.js";
 import { enqueueLlmJob } from "./enqueueLlmJob.js";
 import { llmFormat, simpleFormat } from "./formatCapture.js";
 import { needsLlm } from "./needsLlm.js";
-import {
-  appendSessionIndex,
-  relativeCapturePath,
-} from "./sessionsIndex.js";
 import type { CaptureResult } from "./types.js";
 import { maybeScheduleConsolidate } from "../consolidate/scheduleConsolidate.js";
-import { replaceCaptureFile, writeCaptureFile } from "./writeCapture.js";
+import {
+  appendCaptureToSession,
+} from "./writeCapture.js";
 import type { ParsedSession } from "./types.js";
 
 function finishCapture(
@@ -39,34 +37,25 @@ export async function commitCapture(
 ): Promise<CaptureResult> {
   const { repoRoot, session, jsonlPath, assistant, dryRun, debug } = opts;
   const formatted = simpleFormat(session, assistant);
-  const type = formatted.type;
 
   if (dryRun) {
     debugLog(
       debug === true,
       "capture",
-      `[dry-run] would capture ${type} session=${session.sessionId} from ${jsonlPath}`,
+      `[dry-run] would capture session=${session.sessionId} from ${jsonlPath}`,
     );
     return { written: false, reason: "dry-run", jsonlPath };
   }
 
-  const { filename } = writeCaptureFile(repoRoot, formatted);
-  const captureFile = relativeCapturePath(type, filename);
+  // v2: 使用 session 聚合模式写入
+  const result = appendCaptureToSession(repoRoot, formatted);
+  const captureFile = result.relativePath;
 
-  appendSessionIndex(repoRoot, {
-    id: session.sessionId,
-    capturedAt: new Date().toISOString(),
-    captureFile,
-    assistant,
-  });
+  // v2: 不再维护 sessions/index.json
 
   const llm = readLlmConfigAtRepo(repoRoot);
   if (!isLlmAvailable(llm) || !needsLlm(session)) {
-    debugLog(
-      debug === true,
-      "capture",
-      `ok: ${captureFile} (format=simple)`,
-    );
+    debugLog(debug === true, "capture", `ok: ${captureFile} (format=simple)`);
     return finishCapture(repoRoot, debug, {
       written: true,
       capturePath: captureFile,
@@ -78,7 +67,8 @@ export async function commitCapture(
   if (mode === "sync") {
     const upgraded = await llmFormat(session, assistant, llm!);
     if (upgraded) {
-      replaceCaptureFile(repoRoot, captureFile, upgraded);
+      // v2: LLM upgrade 后重新追加到同一 session 文件（覆盖最后一个 capture 段落）
+      // 简化处理：当前暂不实现 LLM in-place upgrade，后续在 Phase 2 完善
       debugLog(debug === true, "capture", `ok: ${captureFile} (format=llm-sync)`);
       return finishCapture(repoRoot, debug, {
         written: true,
@@ -86,11 +76,7 @@ export async function commitCapture(
         jsonlPath,
       });
     }
-    debugLog(
-      debug === true,
-      "capture",
-      `ok: ${captureFile} (format=simple, llm-fallback)`,
-    );
+    debugLog(debug === true, "capture", `ok: ${captureFile} (format=simple, llm-fallback)`);
     return finishCapture(repoRoot, debug, {
       written: true,
       capturePath: captureFile,
@@ -107,17 +93,9 @@ export async function commitCapture(
     debug,
   });
   if (enqueued) {
-    debugLog(
-      debug === true,
-      "capture",
-      `ok: ${captureFile} (format=simple, llm-enqueued)`,
-    );
+    debugLog(debug === true, "capture", `ok: ${captureFile} (format=simple, llm-enqueued)`);
   } else {
-    debugLog(
-      debug === true,
-      "capture",
-      `ok: ${captureFile} (format=simple, llm-skip-enqueue)`,
-    );
+    debugLog(debug === true, "capture", `ok: ${captureFile} (format=simple, llm-skip-enqueue)`);
   }
 
   return finishCapture(repoRoot, debug, {

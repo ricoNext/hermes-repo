@@ -7,16 +7,35 @@ import {
 } from "node:fs";
 import { memoryPath } from "../init/paths.js";
 
-export interface ConsolidateState {
-  version: 1;
-  lastConsolidatedAt: string;
-  processedCapturePaths: string[];
+// ─── v2 状态模型 ─────────────────────────────
+
+export interface SessionStatusRecord {
+  status: "pending" | "done" | "stale";
+  consolidatedAt: string | null;
+  lastCaptureAt: string;
 }
 
-const EMPTY_STATE: ConsolidateState = {
-  version: 1,
+export interface ConsolidateStateV2 {
+  version: 2;
+  lastConsolidatedAt: string;
+  stats: {
+    totalCapturesProcessed: number;
+    domains: string[];
+    knowledgeFilesCreated: number;
+  };
+  /** sessionId → status record */
+  processedSessions: Record<string, SessionStatusRecord>;
+}
+
+const EMPTY_STATE: ConsolidateStateV2 = {
+  version: 2,
   lastConsolidatedAt: new Date(0).toISOString(),
-  processedCapturePaths: [],
+  stats: {
+    totalCapturesProcessed: 0,
+    domains: [],
+    knowledgeFilesCreated: 0,
+  },
+  processedSessions: {},
 };
 
 export function consolidateStatePath(repoRoot: string): string {
@@ -27,39 +46,44 @@ export function consolidateLockPath(repoRoot: string): string {
   return memoryPath(repoRoot, ".consolidate.lock");
 }
 
-export function readConsolidateState(repoRoot: string): ConsolidateState {
+export function readConsolidateState(repoRoot: string): ConsolidateStateV2 {
   const path = consolidateStatePath(repoRoot);
   if (!existsSync(path)) {
-    return { ...EMPTY_STATE, processedCapturePaths: [] };
+    return { ...EMPTY_STATE, processedSessions: {} };
   }
   try {
-    const raw = JSON.parse(readFileSync(path, "utf8")) as Partial<ConsolidateState>;
-    if (raw.version !== 1) {
-      return { ...EMPTY_STATE, processedCapturePaths: [] };
+    const raw = JSON.parse(readFileSync(path, "utf8")) as unknown;
+    // v1 → v2 自动升级
+    if (typeof raw === "object" && raw !== null) {
+      const obj = raw as Record<string, unknown>;
+      if (obj.version === 2 && typeof obj.processedSessions === "object") {
+        return raw as ConsolidateStateV2;
+      }
+      // v1 升级：processedCapturePaths → 空 processedSessions
+      return {
+        ...EMPTY_STATE,
+        lastConsolidatedAt:
+          typeof obj.lastConsolidatedAt === "string"
+            ? obj.lastConsolidatedAt
+            : EMPTY_STATE.lastConsolidatedAt,
+      };
     }
-    return {
-      version: 1,
-      lastConsolidatedAt:
-        typeof raw.lastConsolidatedAt === "string"
-          ? raw.lastConsolidatedAt
-          : EMPTY_STATE.lastConsolidatedAt,
-      processedCapturePaths: Array.isArray(raw.processedCapturePaths)
-        ? raw.processedCapturePaths.filter((p) => typeof p === "string")
-        : [],
-    };
+    return { ...EMPTY_STATE, processedSessions: {} };
   } catch {
-    return { ...EMPTY_STATE, processedCapturePaths: [] };
+    return { ...EMPTY_STATE, processedSessions: {} };
   }
 }
 
 export function writeConsolidateState(
   repoRoot: string,
-  state: ConsolidateState,
+  state: ConsolidateStateV2,
 ): void {
   const path = consolidateStatePath(repoRoot);
   mkdirSync(memoryPath(repoRoot), { recursive: true });
   writeFileSync(path, `${JSON.stringify(state, null, 2)}\n`, "utf8");
 }
+
+// ─── Lock（保留不变）─────────────────────────
 
 export interface ConsolidateLock {
   pid: number;

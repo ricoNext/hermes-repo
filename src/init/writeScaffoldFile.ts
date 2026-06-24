@@ -1,5 +1,4 @@
-import { copyFileSync, writeFileSync } from "node:fs";
-import { join } from "node:path";
+import { copyFileSync, mkdirSync, writeFileSync } from "node:fs";
 import { getAdapter } from "./assistants/registry.js";
 import type { AssistantId } from "./assistants/types.js";
 import type { InitReport, InitResolvedOptions } from "./types.js";
@@ -7,18 +6,26 @@ import { EXAMPLE_TEMPLATE_FILES, memoryPath } from "./paths.js";
 import { renderTemplate, resolveTemplatePath } from "./templateDir.js";
 import { mergeConfigForInit } from "./mergeConfig.js";
 import { mergeAgentsMd } from "./mergeAgentsMd.js";
-import { writeLlmJson } from "./mergeLlmConfig.js";
 import { shouldWriteFile, writeIfAllowed } from "./scaffoldWrite.js";
 
 export { shouldWriteFile } from "./scaffoldWrite.js";
 
+/** 生成 v2 config.json 内容 */
 export function buildConfigJson(assistants: AssistantId[]): string {
   return `${JSON.stringify(
     {
-      version: 1,
+      version: 2,
       storage: { backend: "file" },
       assistants,
       debug: false,
+      llm: {
+        enabled: false,
+        baseUrl: "https://api.openai.com/v1",
+        model: "gpt-4o",
+      },
+      consolidate: {
+        autoArchiveDays: 30,
+      },
     },
     null,
     2,
@@ -61,13 +68,9 @@ export function writeScaffoldFiles(
 
   writeConfigJson(report, repoRoot, assistants);
 
-  if (opts.writeLlmJson) {
-    const llmAction = writeLlmJson(repoRoot, opts.llm);
-    report.files.push({ path: ".memory/llm.json", action: llmAction });
-  } else {
-    report.files.push({ path: ".memory/llm.json", action: "skipped" });
-  }
+  // v2: 不再生成 llm.json（已合并入 config.json）
 
+  // MEMORY.md — v2 导航模板
   writeIfAllowed(
     report,
     memoryPath(repoRoot, "MEMORY.md"),
@@ -76,21 +79,29 @@ export function writeScaffoldFiles(
     force,
   );
 
+  // consolidate-state.json — 初始空状态
   writeIfAllowed(
     report,
-    memoryPath(repoRoot, "sessions", "index.json"),
-    ".memory/sessions/index.json",
-    `${JSON.stringify({ version: 1, sessions: [] }, null, 2)}\n`,
+    memoryPath(repoRoot, "consolidate-state.json"),
+    ".memory/consolidate-state.json",
+    `${JSON.stringify(
+      {
+        version: 1,
+        lastConsolidatedAt: null,
+        stats: {
+          totalCapturesProcessed: 0,
+          domains: [],
+          knowledgeFilesCreated: 0,
+        },
+        processedSessions: {},
+      },
+      null,
+      2,
+    )}\n`,
     force,
   );
 
-  writeIfAllowed(
-    report,
-    memoryPath(repoRoot, "team", "steward-log.md"),
-    ".memory/team/steward-log.md",
-    renderTemplate("steward-log.md.tpl"),
-    force,
-  );
+  // v2: 不再生成 sessions/index.json 和 team/steward-log.md
 
   report.files.push({
     path: "AGENTS.md",
@@ -101,7 +112,10 @@ export function writeScaffoldFiles(
     getAdapter(id).write({ repoRoot, force, report });
   }
 
-  if (includeExampleTemplates) {
+  if (includeExampleTemplates && EXAMPLE_TEMPLATE_FILES.length > 0) {
+    // v2: templates/ 目录不在 ensureMemoryTree 中，按需创建
+    const templatesDir = memoryPath(repoRoot, "templates");
+    mkdirSync(templatesDir, { recursive: true });
     for (const name of EXAMPLE_TEMPLATE_FILES) {
       const dest = memoryPath(repoRoot, "templates", name);
       copyTemplateIfAllowed(

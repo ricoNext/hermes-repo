@@ -1,11 +1,8 @@
-import { listPendingJobs } from "../capture/enqueueLlmJob.js";
-import {
-  CONSOLIDATE_COUNT_THRESHOLD,
-  CONSOLIDATE_HOURS_THRESHOLD,
-} from "./constants.js";
-import { detectConflicts } from "./detectConflict.js";
-import { filterActiveCaptures, listAllCaptures, selectNewCaptures } from "./listCaptures.js";
-import { readConsolidateState } from "./state.js";
+/**
+ * v2: shouldRunConsolidate 保留为兼容接口，但不再使用。
+ * v2 采用懒 consolidate 策略（手动 flush），不自动调度。
+ * 保留此文件避免其他潜在引用编译失败。
+ */
 
 export interface ShouldConsolidateInput {
   repoRoot: string;
@@ -21,71 +18,21 @@ export interface ShouldConsolidateResult {
   deferredPendingLlm?: boolean;
 }
 
+/** v2: 始终返回 false（自动调度已禁用） */
 export function shouldRunConsolidate(
   input: ShouldConsolidateInput,
 ): ShouldConsolidateResult {
-  const { repoRoot, force, manual } = input;
-
-  if (force || manual) {
-    const all = filterActiveCaptures(listAllCaptures(repoRoot));
+  if (input.force || input.manual) {
     return {
-      shouldRun: all.length > 0 || force === true,
-      reason: manual ? "manual" : "force",
-      newCaptureCount: all.length,
-      hasConflict: detectConflicts(all).length > 0,
-    };
-  }
-
-  const pending = listPendingJobs(repoRoot);
-  if (pending.length > 0) {
-    return {
-      shouldRun: false,
-      reason: "pending-llm-jobs",
+      shouldRun: true,
+      reason: input.manual ? "manual" : "force",
       newCaptureCount: 0,
       hasConflict: false,
-      deferredPendingLlm: true,
     };
   }
-
-  const state = readConsolidateState(repoRoot);
-  const all = listAllCaptures(repoRoot);
-  const active = filterActiveCaptures(all);
-  const newOnes = selectNewCaptures(active, state.processedCapturePaths, false);
-
-  if (detectConflicts(active).length > 0 && newOnes.length > 0) {
-    return {
-      shouldRun: true,
-      reason: "conflict",
-      newCaptureCount: newOnes.length,
-      hasConflict: true,
-    };
-  }
-
-  if (newOnes.length >= CONSOLIDATE_COUNT_THRESHOLD) {
-    return {
-      shouldRun: true,
-      reason: "count",
-      newCaptureCount: newOnes.length,
-      hasConflict: false,
-    };
-  }
-
-  const lastMs = Date.parse(state.lastConsolidatedAt);
-  const hoursSince =
-    Number.isNaN(lastMs) ? Infinity : (Date.now() - lastMs) / (1000 * 60 * 60);
-
-  if (hoursSince >= CONSOLIDATE_HOURS_THRESHOLD && newOnes.length >= 1) {
-    return {
-      shouldRun: true,
-      reason: "time",
-      newCaptureCount: newOnes.length,
-      hasConflict: false,
-    };
-  }
-
   return {
     shouldRun: false,
-    newCaptureCount: newOnes.length,
+    newCaptureCount: 0,
     hasConflict: false,
   };
 }

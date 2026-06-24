@@ -24,8 +24,8 @@ function runCli(args: string[], cwd?: string): {
   };
 }
 
-describe("cli promote", () => {
-  it("preview exits 0 with empty repo message", () => {
+describe("cli promote (removed in v2)", () => {
+  it("promote command exits with error (removed)", () => {
     const dir = mkdtempSync(join(tmpdir(), "hermes-cli-promote-"));
     mkdirSync(join(dir, ".memory"), { recursive: true });
     writeFileSync(
@@ -33,11 +33,9 @@ describe("cli promote", () => {
       '{"version":1,"storage":{"backend":"file"},"assistants":["claude-code"],"debug":false}\n',
     );
 
-    const { stderr, status } = runCli(
-      ["promote", "--preview", "-C", dir],
-      dir,
-    );
-    expect(status).toBe(0);
-    expect(stderr).toMatch(/no .promote markers/);
+    const { status, stderr } = runCli(["promote", "-C", dir], dir);
+    // v2: promote 命令已移除，应返回非零退出码或 "unknown command"
+    expect(status).not.toBe(0);
+    expect(stderr + "").toMatch(/unknown|not found|promote/i);
   });
 });

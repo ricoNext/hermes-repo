@@ -1,8 +1,1 @@
-{
-  "version": 1,
-  "storage": {
-    "backend": "file"
-  },
-  "assistants": ["claude-code"],
-  "debug": false
-}
+{"version": 2, "storage": {"backend": "file"}, "assistants": ["claude-code"], "debug": false, "llm": {"enabled": false, "baseUrl": "https://api.openai.com/v1", "model": "gpt-4o"}, "consolidate": {"autoArchiveDays": 30}}

@@ -1,5 +1,6 @@
 import { hookExit } from "../hookExit.js";
 import { runFlushCommand } from "../consolidate/scheduleConsolidate.js";
+import type { ConsolidateResultV2 } from "../consolidate/runConsolidate.js";
 
 export async function runFlushCommandCli(opts: {
   cwd?: string;
@@ -14,22 +15,43 @@ export async function runFlushCommandCli(opts: {
       dryRun: opts.dryRun,
     });
 
-    if (result.ran && result.memoryUpdated) {
-      const extra: string[] = [];
-      if (result.refsAggregated > 0) {
-        extra.push(`${result.refsAggregated} ref(s) aggregated`);
+    if (result.ran) {
+      if (result.reason === "dry-run") {
+        console.error(
+          `hermes-repo: dry-run would process ${result.sessionsProcessed} session(s)`,
+        );
+      } else {
+        const parts: string[] = [];
+        if (result.knowledgeCreated > 0)
+          parts.push(`${result.knowledgeCreated} created`);
+        if (result.knowledgeUpdated > 0)
+          parts.push(`${result.knowledgeUpdated} updated`);
+        if (result.skippedCount > 0)
+          parts.push(`${result.skippedCount} skipped`);
+        if (result.archived > 0)
+          parts.push(`${result.archived} archived`);
+        const suffix = parts.length > 0 ? `, ${parts.join(", ")}` : "";
+
+        console.error(
+          `hermes-repo: consolidated ${result.sessionsProcessed} session(s)${suffix}`,
+        );
       }
-      if (result.archived > 0) {
-        extra.push(`${result.archived} archived`);
+    } else {
+      switch (result.reason) {
+        case "not-initialized":
+          console.error(
+            "hermes-repo flush: not initialized (.memory/config.json missing)",
+          );
+          break;
+        case "llm-not-enabled":
+          console.error("hermes-repo flush: LLM not enabled in config.json");
+          break;
+        case "no-pending-sessions":
+          console.error("hermes-repo flush: no pending sessions to process");
+          break;
+        default:
+          console.error(`hermes-repo flush: ${result.reason ?? "skipped"}`);
       }
-      const suffix = extra.length > 0 ? `, ${extra.join(", ")}` : "";
-      console.error(
-        `hermes-repo: consolidated ${result.newProcessed} capture(s), ${result.topicsWritten} topic(s), ${result.skillsWritten} skill(s)${suffix}`,
-      );
-    } else if (result.ran && result.reason === "dry-run") {
-      console.error(
-        `hermes-repo: dry-run would process ${result.newProcessed} capture(s)`,
-      );
     }
 
     hookExit(0, opts.strict);

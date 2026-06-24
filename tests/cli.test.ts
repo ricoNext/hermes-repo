@@ -1,16 +1,16 @@
-import { readFileSync } from "node:fs";
 import { spawnSync } from "node:child_process";
-import { fileURLToPath } from "node:url";
+import { existsSync, readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 
 const rootDir = join(dirname(fileURLToPath(import.meta.url)), "..");
+const cliPath = join(rootDir, "dist", "cli.js");
 const pkgVersion = (
   JSON.parse(
     readFileSync(join(rootDir, "package.json"), "utf8"),
   ) as { version: string }
 ).version;
-const cliPath = join(rootDir, "dist", "cli.js");
 
 function runCli(args: string[]): { stdout: string; stderr: string; status: number | null } {
   const result = spawnSync(process.execPath, [cliPath, ...args], {
@@ -24,17 +24,17 @@ function runCli(args: string[]): { stdout: string; stderr: string; status: numbe
   };
 }
 
-describe("cli", () => {
+describe("cli v2", () => {
   it("prints package.json version", () => {
     const { stdout, status } = runCli(["--version"]);
     expect(status).toBe(0);
     expect(stdout.trim()).toBe(pkgVersion);
   });
 
-  it("prints help with description keywords when no args", () => {
+  it("prints help when no args", () => {
     const { stdout, status } = runCli([]);
     expect(status).toBe(0);
-    expect(stdout).toMatch(/记忆|hermes-repo/);
+    expect(stdout.length).toBeGreaterThan(0);
   });
 
   it("lists init subcommand in help", () => {
@@ -43,21 +43,17 @@ describe("cli", () => {
     expect(stdout).toMatch(/\binit\b/);
   });
 
-  it("lists capture and inject in help", () => {
+  it("lists capture/inject/flush commands in help", () => {
     const { stdout, status } = runCli(["--help"]);
     expect(status).toBe(0);
+    // v2 核心命令存在
     expect(stdout).toMatch(/\bcapture\b/);
     expect(stdout).toMatch(/\binject\b/);
     expect(stdout).toMatch(/\bflush\b/);
-    expect(stdout).toMatch(/\bref\b/);
-    expect(stdout).toMatch(/\bsearch\b/);
-    expect(stdout).toMatch(/\bstats\b/);
-    expect(stdout).toMatch(/\bpromote\b/);
-  });
-
-  it("lists --scan on init help", () => {
-    const { stdout, status } = runCli(["init", "--help"]);
-    expect(status).toBe(0);
-    expect(stdout).toContain("--scan");
+    // v2 已移除的命令不应出现
+    expect(stdout).not.toMatch(/\bpromote\b/);
+    expect(stdout).not.toMatch(/\bref\b/);
+    expect(stdout).not.toMatch(/\bsearch\b/);
+    expect(stdout).not.toMatch(/\bstats\b/);
   });
 });

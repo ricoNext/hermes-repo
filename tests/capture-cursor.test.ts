@@ -21,7 +21,8 @@ const tempDirs: string[] = [];
 function makeRepo(assistants: string[]): string {
   const dir = mkdtempSync(join(tmpdir(), "hermes-cursor-cap-"));
   tempDirs.push(dir);
-  mkdirSync(join(dir, ".memory", "captures", "episodic"), { recursive: true });
+  // v2: captures/raw/
+  mkdirSync(join(dir, ".memory", "captures", "raw"), { recursive: true });
   mkdirSync(join(dir, ".memory", "sessions"), { recursive: true });
   writeFileSync(
     join(dir, ".memory", "config.json"),
@@ -77,10 +78,10 @@ describe("capture cursor", () => {
     }
 
     expect(result.written).toBe(true);
-    const index = JSON.parse(
-      readFileSync(join(dir, ".memory", "sessions", "index.json"), "utf8"),
-    ) as { sessions: Array<{ assistant?: string }> };
-    expect(index.sessions[0]?.assistant).toBe("cursor");
+    // v2: 不再维护 sessions/index.json（assistant 字段不可用）
+    const rawDir = join(dir, ".memory", "captures", "raw");
+    const mdFiles = require("node:fs").readdirSync(rawDir).filter((f: string) => f.endsWith(".md"));
+    expect(mdFiles.length).toBeGreaterThan(0);
   });
 
   it("routes Claude hook stdin to claude branch when both assistants enabled", async () => {

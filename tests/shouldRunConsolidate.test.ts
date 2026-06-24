@@ -1,67 +1,41 @@
 import { describe, expect, it } from "vitest";
 import {
-  existsSync,
-  mkdirSync,
   mkdtempSync,
+  mkdirSync,
   writeFileSync,
 } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { shouldRunConsolidate } from "../src/consolidate/shouldRunConsolidate.js";
-import { writeConsolidateState } from "../src/consolidate/state.js";
-
-function initRepo(dir: string): void {
-  mkdirSync(join(dir, ".memory", "captures", "semantic"), {
-    recursive: true,
-  });
-  writeFileSync(
-    join(dir, ".memory", "config.json"),
-    `${JSON.stringify({ version: 1, storage: { backend: "file" }, assistants: ["claude-code"], debug: false })}\n`,
-  );
-}
-
-function addCapture(dir: string, n: number): void {
-  const name = `capture-2026-05-20-${String(n).padStart(3, "0")}.md`;
-  writeFileSync(
-    join(dir, ".memory", "captures", "semantic", name),
-    `---
-type: semantic
-date: 2026-05-20
-session: s${n}
-tags: [t${n}]
-scope: all
-confidence: pending
----
-
-## 发现
-
-fact ${n}
-`,
-  );
-}
 
 describe("shouldRunConsolidate", () => {
-  it("triggers on count threshold", () => {
-    const dir = mkdtempSync(join(tmpdir(), "hermes-should-"));
-    initRepo(dir);
-    writeConsolidateState(dir, {
-      version: 1,
-      lastConsolidatedAt: new Date().toISOString(),
-      processedCapturePaths: [],
-    });
-    for (let i = 1; i <= 10; i++) {
-      addCapture(dir, i);
-    }
-    const r = shouldRunConsolidate({ repoRoot: dir });
-    expect(r.shouldRun).toBe(true);
-    expect(r.reason).toBe("count");
+  it("v2: auto-scheduling disabled — returns false by default", () => {
+    const dir = mkdtempSync(join(tmpdir(), "hermes-src-"));
+    mkdirSync(join(dir, ".memory", "captures"), { recursive: true });
+    const result = shouldRunConsolidate({ repoRoot: dir, force: false });
+    expect(result.shouldRun).toBe(false);
   });
 
-  it("manual always runnable with captures", () => {
-    const dir = mkdtempSync(join(tmpdir(), "hermes-should-m-"));
-    initRepo(dir);
-    addCapture(dir, 1);
-    const r = shouldRunConsolidate({ repoRoot: dir, manual: true });
-    expect(r.shouldRun).toBe(true);
+  it("manual flag triggers consolidation", () => {
+    const result = shouldRunConsolidate({
+      repoRoot: "/tmp/fake",
+      manual: true,
+    });
+    expect(result.shouldRun).toBe(true);
+    expect(result.reason).toBe("manual");
+  });
+
+  it("force flag triggers consolidation", () => {
+    const result = shouldRunConsolidate({ repoRoot: "/tmp/fake", force: true });
+    expect(result.shouldRun).toBe(true);
+    expect(result.reason).toBe("force");
+  });
+
+  it("returns hasConflict false and zero count when not forced", () => {
+    const dir = mkdtempSync(join(tmpdir(), "hermes-src-"));
+    mkdirSync(join(dir, ".memory"), { recursive: true });
+    const result = shouldRunConsolidate({ repoRoot: dir });
+    expect(result.hasConflict).toBe(false);
+    expect(result.newCaptureCount).toBe(0);
   });
 });

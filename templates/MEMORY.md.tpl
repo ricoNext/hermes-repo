@@ -1,25 +1,43 @@
-# 项目记忆
+# 项目知识库
 
-最后更新: — | 总计: 0 条捕获（0 语义 + 0 情景 + 0 流程）
+最后更新: — | 域: 0 | 规则: 0 | 工作流: 0 | 决策: 0 | 踩坑: 0
 
-## 活跃主题
+> 此文件由 `hermes flush` 后 LLM 自动生成，也可手动编辑。
+> 编辑时请保留 <!-- user-edit-start --> ... <!-- user-edit-end --> 标记。
 
-（consolidate 后自动填充）
+## 必读规则
 
-## 最近经验
-
-（consolidate 后自动填充）
-
-## 项目约定
+> 每次会话都应加载的编码规范和项目约定
 
 （consolidate 后自动填充）
 
-## 可用技能
+## 业务域
 
-（consolidate 后从 procedural 晋升填充）
+> 根据任务选择相关域读取
 
-## 检索提示
+| 域 | 文件 | 摘要 |
+|----|------|------|
+| — | — | — |
 
-- 手动整理记忆: `npx @riconext/hermes-repo flush`
-- 查看捕获: `ls .memory/captures/` 或 `cat .memory/captures/<type>/<文件>.md`
-- 查看主题: `ls .memory/topics/`
+（首次 `hermes flush` 后自动生成）
+
+## 工作流
+
+> 可复用的执行流程
+
+（consolidate 后从 procedural captures 晋升填充）
+
+## 决策 & 踩坑
+
+> 需要了解背景时按需查看
+
+- decisions/: 0 条记录
+- incidents/: 0 条记录
+
+---
+
+## 使用说明
+
+- 整理记忆（触发 consolidate）: `npx @riconext/hermes-repo flush`
+- 查看原始捕获: `ls .memory/captures/raw/`
+- 查看业务域: `ls .memory/domains/`

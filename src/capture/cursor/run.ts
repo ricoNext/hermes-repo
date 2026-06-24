@@ -1,7 +1,6 @@
 import { commitCapture } from "../commitCapture.js";
-import { shouldCapture } from "../shouldCapture.js";
-import type { HookInput } from "../hookInput.js";
 import type { CaptureResult } from "../types.js";
+import type { HookInput } from "../hookInput.js";
 import { parseJsonlFile } from "../claude-code/parseJsonl.js";
 import { resolveCursorSessionJsonl } from "./resolveSession.js";
 
@@ -27,14 +26,8 @@ export async function runCursorCapture(
     return { written: false, reason: "no cursor session found" };
   }
 
+  // v2: 始终捕获（去掉 shouldCapture 质量过滤）
   const session = parseJsonlFile(jsonlPath);
-  if (!shouldCapture(session)) {
-    return {
-      written: false,
-      reason: `heuristic rejected (messages=${session.messages.length}, toolCalls=${session.toolCalls})`,
-      jsonlPath,
-    };
-  }
 
   return commitCapture({
     repoRoot,

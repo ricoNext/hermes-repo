@@ -1,5 +1,4 @@
 import type { ParsedSession } from "./types.js";
-import { hasUserCorrection } from "./shouldCapture.js";
 import {
   computeSignalScore,
   getSignalStrength,
@@ -7,6 +6,15 @@ import {
 
 const ARCHITECTURE_SIGNAL_RE =
   /约定|必须|架构|决策|规范|根因|migration|refactor|convention|root cause/i;
+const CORRECTION_RE =
+  /不对|错了|不是这样|不应该|别用|stop|wrong|incorrect|改成|修正/i;
+
+/** 内联：用户纠正检测（原 shouldCapture.ts） */
+function hasUserCorrection(session: ParsedSession): boolean {
+  return session.messages.some(
+    (m) => m.role === "user" && CORRECTION_RE.test(m.text),
+  );
+}
 
 export function hasArchitectureSignal(text: string): boolean {
   return ARCHITECTURE_SIGNAL_RE.test(text);

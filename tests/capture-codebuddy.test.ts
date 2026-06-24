@@ -26,7 +26,8 @@ const tempDirs: string[] = [];
 function makeRepo(assistants: string[]): string {
   const dir = mkdtempSync(join(tmpdir(), "hermes-cb-cap-"));
   tempDirs.push(dir);
-  mkdirSync(join(dir, ".memory", "captures", "episodic"), { recursive: true });
+  // v2: captures/raw/
+  mkdirSync(join(dir, ".memory", "captures", "raw"), { recursive: true });
   mkdirSync(join(dir, ".memory", "sessions"), { recursive: true });
   writeFileSync(
     join(dir, ".memory", "config.json"),
@@ -85,10 +86,11 @@ describe("capture codebuddy", () => {
     restoreEnv(prevCb, prevClaude, prevClaudeHome, prevCursorHome);
 
     expect(result.written).toBe(true);
-    const index = JSON.parse(
-      readFileSync(join(dir, ".memory", "sessions", "index.json"), "utf8"),
-    ) as { sessions: Array<{ assistant?: string }> };
-    expect(index.sessions[0]?.assistant).toBe("codebuddy");
+    // v2: 不再维护 sessions/index.json（assistant 字段不可用）
+    // 改为验证 raw/ 目录下有文件写入
+    const rawDir = join(dir, ".memory", "captures", "raw");
+    const mdFiles = require("node:fs").readdirSync(rawDir).filter((f: string) => f.endsWith(".md"));
+    expect(mdFiles.length).toBeGreaterThan(0);
   });
 
   it("routes .codebuddy transcript_path to codebuddy branch", async () => {

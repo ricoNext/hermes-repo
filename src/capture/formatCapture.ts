@@ -5,8 +5,17 @@ import {
   type LlmExtractResult,
 } from "../llm/renderCaptureFromJson.js";
 import type { AssistantId } from "../init/assistants/types.js";
-import { inferCaptureType } from "./shouldCapture.js";
 import type { CaptureMemoryType, ParsedSession } from "./types.js";
+
+/** 内联：推断 capture 类型（原 shouldCapture.ts，v2 保留用于 capture-llm 兼容） */
+function inferCaptureType(session: ParsedSession): "semantic" | "episodic" {
+  const SEMANTIC_SIGNAL_RE =
+    /约定|必须|架构|决策|规范|convention|pattern|always|never/i;
+  if (SEMANTIC_SIGNAL_RE.test(session.text)) {
+    return "semantic";
+  }
+  return "episodic";
+}
 
 export interface FormattedCapture {
   type: CaptureMemoryType;
