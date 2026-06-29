@@ -43,6 +43,23 @@ export function debugLog(
   writeToLogFile(line);
 }
 
+export function debugLogBlock(
+  enabled: boolean,
+  phase: string,
+  label: string,
+  content: string,
+): void {
+  if (!enabled) {
+    return;
+  }
+
+  debugLog(true, phase, `${label} BEGIN`);
+  for (const line of content.split(/\r?\n/)) {
+    debugLog(true, phase, `| ${line}`);
+  }
+  debugLog(true, phase, `${label} END`);
+}
+
 export function debugFromContext(
   ctx: RepoContext | null | undefined,
   phase: string,

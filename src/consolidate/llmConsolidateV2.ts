@@ -2,6 +2,7 @@ import { readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 import { memoryPath } from "../init/paths.js";
 import type { LlmConfigV2 } from "../config/types.js";
+import { debugLog, debugLogBlock } from "../config/debugLog.js";
 import type { ScannedSession } from "./sessionScanner.js";
 
 // ─── Types ────────────────────────────────────
@@ -247,6 +248,7 @@ export function buildLlmConsolidateInput(
 export async function callLlmConsolidate(
   input: LlmConsolidateInput,
   llmConfig: LlmConfigV2,
+  debug = false,
 ): Promise<LlmConsolidateResult> {
   if (!llmConfig.enabled) {
     throw new Error(
@@ -264,6 +266,24 @@ export async function callLlmConsolidate(
 
   // 构造 user message — 将 input 序列化为 JSON
   const userContent = formatUserMessage(input);
+  debugLog(
+    debug,
+    "llm",
+    `request: provider=${llmConfig.provider}, model=${llmConfig.model}, baseUrl=${llmConfig.baseUrl}, pendingSessions=${input.pendingSessions.length}, existingKnowledge=${input.existingKnowledge.length}, currentMemoryChars=${input.currentMemoryMd?.length ?? 0}`,
+  );
+  debugLogBlock(debug, "llm", "system prompt", CONSOLIDATE_SYSTEM_PROMPT);
+  debugLogBlock(debug, "llm", "user input", userContent);
+
+  const requestBody = {
+    model: llmConfig.model,
+    response_format: { type: "json_object" },
+    messages: [
+      { role: "system", content: CONSOLIDATE_SYSTEM_PROMPT },
+      { role: "user", content: userContent },
+    ],
+    temperature: 0.2,
+  };
+  debugLogBlock(debug, "llm", "request body", JSON.stringify(requestBody, null, 2));
 
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 120_000); // 2 分钟超时
@@ -275,20 +295,14 @@ export async function callLlmConsolidate(
         "Content-Type": "application/json",
         Authorization: `Bearer ${llmConfig.apiKey}`,
       },
-      body: JSON.stringify({
-        model: llmConfig.model,
-        response_format: { type: "json_object" },
-        messages: [
-          { role: "system", content: CONSOLIDATE_SYSTEM_PROMPT },
-          { role: "user", content: userContent },
-        ],
-        temperature: 0.2,
-      }),
+      body: JSON.stringify(requestBody),
       signal: controller.signal,
     });
+    debugLog(debug, "llm", `response status: ${res.status} ${res.statusText}`);
 
     if (!res.ok) {
       const errBody = await res.text().catch(() => "");
+      debugLogBlock(debug, "llm", "error response body", errBody);
       throw new Error(
         `LLM API 错误 (${res.status}): ${errBody.slice(0, 300)}`,
       );
@@ -297,11 +311,13 @@ export async function callLlmConsolidate(
     const data = (await res.json()) as {
       choices?: Array<{ message?: { content?: string } }>;
     };
+    debugLogBlock(debug, "llm", "response json", JSON.stringify(data, null, 2));
     const rawContent = data.choices?.[0]?.message?.content;
 
     if (!rawContent) {
       throw new Error("LLM 返回内容为空");
     }
+    debugLogBlock(debug, "llm", "raw message content", rawContent);
 
     // 解析 JSON
     let parsed: unknown;
@@ -310,8 +326,36 @@ export async function callLlmConsolidate(
     } catch {
       throw new Error("LLM 返回内容不是合法 JSON");
     }
+    debugLogBlock(debug, "llm", "parsed content", JSON.stringify(parsed, null, 2));
 
-    return validateAndNormalizeLlmResult(parsed);
+    const normalized = validateAndNormalizeLlmResult(parsed);
+    debugLog(
+      debug,
+      "llm",
+      `normalized: knowledgeFiles=${normalized.knowledgeFiles.length}, memoryChars=${normalized.memoryMd.length}, skippedSessions=${normalized.skippedSessions.length}`,
+    );
+    debugLogBlock(
+      debug,
+      "llm",
+      "normalized knowledgeFiles",
+      JSON.stringify(normalized.knowledgeFiles, null, 2),
+    );
+    debugLogBlock(debug, "llm", "normalized memoryMd", normalized.memoryMd);
+    debugLogBlock(
+      debug,
+      "llm",
+      "normalized skippedSessions",
+      JSON.stringify(normalized.skippedSessions, null, 2),
+    );
+
+    return normalized;
+  } catch (err) {
+    debugLog(
+      debug,
+      "llm",
+      `error: ${err instanceof Error ? err.message : String(err)}`,
+    );
+    throw err;
   } finally {
     clearTimeout(timeout);
   }

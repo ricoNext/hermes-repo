@@ -133,7 +133,7 @@ export async function runConsolidate(
     // Step 3: 单次 LLM 调用
     let llmResult;
     try {
-      llmResult = await callLlmConsolidate(llmInput, llmConfig);
+      llmResult = await callLlmConsolidate(llmInput, llmConfig, debug === true);
     } catch (err) {
       console.error(`[consolidate] LLM 调用失败: ${(err as Error).message}`);
       throw err;

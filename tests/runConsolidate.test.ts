@@ -13,6 +13,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type { HermesConfig } from "../src/config/types.js";
 import { runConsolidate } from "../src/consolidate/runConsolidate.js";
+import { configureDebugLogging } from "../src/config/debugLog.js";
 
 const tempDirs: string[] = [];
 const originalFetch = globalThis.fetch;
@@ -196,6 +197,45 @@ describe("runConsolidate (v2)", () => {
     expect(readFileSync(join(dir, ".memory", "MEMORY.md"), "utf8")).toContain(
       "domains/canvas/canvas-interaction.md",
     );
+  });
+
+  it("writes detailed LLM request and response logs when debug is enabled", async () => {
+    const dir = makeV2Repo({ llm: llmConfig() });
+    configureDebugLogging(dir, true);
+    writePendingSession(dir, "sess-llm-log", "Canvas interaction rule.");
+    mockLlmResult({
+      knowledgeFiles: [
+        {
+          targetPath: "domains/canvas/canvas-interaction.md",
+          action: "create",
+          frontmatter: {
+            title: "Canvas interaction",
+            domain: "canvas",
+            type: "domain-knowledge",
+            status: "active",
+            confidence: "high",
+          },
+          body: "Canvas interaction notes.",
+        },
+      ],
+      memoryMd:
+        "# 项目知识库\n\n[Canvas interaction](domains/canvas/canvas-interaction.md)",
+      skippedSessions: [],
+    });
+
+    await runConsolidate({
+      repoRoot: dir,
+      config: JSON.parse(readFileSync(join(dir, ".memory", "config.json"), "utf8")),
+      debug: true,
+    });
+
+    const log = readFileSync(join(dir, ".memory", "hermes-debug.log"), "utf8");
+    expect(log).toContain("hermes-repo [llm] request:");
+    expect(log).toContain("hermes-repo [llm] response json BEGIN");
+    expect(log).toContain("hermes-repo [llm] raw message content BEGIN");
+    expect(log).toContain("hermes-repo [llm] normalized knowledgeFiles BEGIN");
+    expect(log).toContain("domains/canvas/canvas-interaction.md");
+    expect(log).not.toContain("Bearer k");
   });
 
   it("fails before updating MEMORY.md when it links missing knowledge files", async () => {
