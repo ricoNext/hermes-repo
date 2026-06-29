@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.1.1
+
+### Patch Changes
+
+- cfa583b: 合并 llm 配置读取到通用配置模块，删除 readLlmConfig.ts 和 mergeLlmConfig.ts
+
 ## 1.1.0
 
 ### Minor Changes
