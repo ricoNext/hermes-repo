@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.2.4
+
+### Patch Changes
+
+- 089eb55: 兼容 LLM 返回 path 和 YAML frontmatter 的知识文件格式，避免有效知识文件在 flush 时被过滤丢弃。
+
 ## 1.2.3
 
 ### Patch Changes
