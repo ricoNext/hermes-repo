@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.2.1
+
+### Patch Changes
+
+- be5381b: 修复 ESM 打包产物中 `flush` 触发动态 require 导致 `Dynamic require of "fs" is not supported` 的问题。
+
 ## 1.2.0
 
 ### Minor Changes
