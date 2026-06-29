@@ -35,8 +35,30 @@ function parseLlmConfig(raw: Record<string, unknown>): LlmConfigV2 {
 
 function parseConsolidateConfig(raw: Record<string, unknown>): ConsolidateConfig {
   const c = raw.consolidate as Record<string, unknown> | undefined;
+  const autoFlush =
+    c?.autoFlush && typeof c.autoFlush === "object" && !Array.isArray(c.autoFlush)
+      ? (c.autoFlush as Record<string, unknown>)
+      : {};
   return {
     autoArchiveDays: typeof c?.autoArchiveDays === "number" ? c.autoArchiveDays : 30,
+    autoFlush: {
+      enabled: autoFlush.enabled === true,
+      minPendingSessions:
+        typeof autoFlush.minPendingSessions === "number" &&
+        autoFlush.minPendingSessions > 0
+          ? autoFlush.minPendingSessions
+          : 3,
+      minIntervalMinutes:
+        typeof autoFlush.minIntervalMinutes === "number" &&
+        autoFlush.minIntervalMinutes > 0
+          ? autoFlush.minIntervalMinutes
+          : 30,
+      maxPendingChars:
+        typeof autoFlush.maxPendingChars === "number" &&
+        autoFlush.maxPendingChars > 0
+          ? autoFlush.maxPendingChars
+          : 20_000,
+    },
   };
 }
 
@@ -81,7 +103,15 @@ export function readConfigAtRepo(repoRoot: string): HermesConfig | null {
           maxInputChars: 24_000,
           mode: "async",
         },
-        consolidate: { autoArchiveDays: 30 },
+        consolidate: {
+          autoArchiveDays: 30,
+          autoFlush: {
+            enabled: false,
+            minPendingSessions: 3,
+            minIntervalMinutes: 30,
+            maxPendingChars: 20_000,
+          },
+        },
       };
     }
 

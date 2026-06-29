@@ -17,6 +17,12 @@ const DEFAULT_LLM = {
 
 const DEFAULT_CONSOLIDATE = {
   autoArchiveDays: 30,
+  autoFlush: {
+    enabled: false,
+    minPendingSessions: 3,
+    minIntervalMinutes: 30,
+    maxPendingChars: 20_000,
+  },
 };
 
 export function mergeConfigForInit(
@@ -54,6 +60,12 @@ export function mergeConfigForInit(
     existing.consolidate && typeof existing.consolidate === "object" && !Array.isArray(existing.consolidate)
       ? (existing.consolidate as Record<string, unknown>)
       : {};
+  const prevAutoFlush =
+    prevConsolidate.autoFlush &&
+    typeof prevConsolidate.autoFlush === "object" &&
+    !Array.isArray(prevConsolidate.autoFlush)
+      ? (prevConsolidate.autoFlush as Record<string, unknown>)
+      : {};
 
   const merged: Record<string, unknown> = {
     ...existing,
@@ -65,7 +77,14 @@ export function mergeConfigForInit(
     assistants,
     debug: existing.debug === true,
     llm: { ...DEFAULT_LLM, ...prevLlm },
-    consolidate: { ...DEFAULT_CONSOLIDATE, ...prevConsolidate },
+    consolidate: {
+      ...DEFAULT_CONSOLIDATE,
+      ...prevConsolidate,
+      autoFlush: {
+        ...DEFAULT_CONSOLIDATE.autoFlush,
+        ...prevAutoFlush,
+      },
+    },
   };
 
   return {

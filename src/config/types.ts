@@ -13,6 +13,12 @@ export interface LlmConfigV2 {
 
 export interface ConsolidateConfig {
   autoArchiveDays: number;
+  autoFlush: {
+    enabled: boolean;
+    minPendingSessions: number;
+    minIntervalMinutes: number;
+    maxPendingChars: number;
+  };
 }
 
 /** v2 配置（含 LLM 和 consolidate 节） */

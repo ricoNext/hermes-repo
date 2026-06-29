@@ -37,6 +37,15 @@ function makeV2Repo(overrides?: Partial<HermesConfig>): string {
       maxInputChars: 24_000,
       mode: "async",
     },
+    consolidate: {
+      autoArchiveDays: 30,
+      autoFlush: {
+        enabled: false,
+        minPendingSessions: 3,
+        minIntervalMinutes: 30,
+        maxPendingChars: 20_000,
+      },
+    },
     ...overrides,
   };
   writeFileSync(

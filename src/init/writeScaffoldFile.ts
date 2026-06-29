@@ -30,6 +30,12 @@ export function buildConfigJson(assistants: AssistantId[]): string {
       },
       consolidate: {
         autoArchiveDays: 30,
+        autoFlush: {
+          enabled: false,
+          minPendingSessions: 3,
+          minIntervalMinutes: 30,
+          maxPendingChars: 20_000,
+        },
       },
     },
     null,

@@ -86,9 +86,19 @@ npx @riconext/hermes-repo flush
     "baseUrl": "https://api.openai.com/v1",
     "model": "gpt-4o",
     "apiKey": "sk-..."
+  },
+  "consolidate": {
+    "autoFlush": {
+      "enabled": false,
+      "minPendingSessions": 3,
+      "minIntervalMinutes": 30,
+      "maxPendingChars": 20000
+    }
   }
 }
 ```
+
+`autoFlush.enabled` 设为 `true` 后，capture 成功写入时会按阈值后台触发 `hermes flush`。
 
 ## 常用命令
 

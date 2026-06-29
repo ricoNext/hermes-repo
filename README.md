@@ -272,6 +272,14 @@ npx @riconext/hermes-repo init
     "timeoutMs": 60000,
     "maxInputChars": 24000,
     "mode": "async"
+  },
+  "consolidate": {
+    "autoFlush": {
+      "enabled": false,
+      "minPendingSessions": 3,
+      "minIntervalMinutes": 30,
+      "maxPendingChars": 20000
+    }
   }
 }
 ```
@@ -284,6 +292,8 @@ npx @riconext/hermes-repo init
 | `mode` | 默认 `async`：hook 不等待；调试可用 `sync` |
 
 非 DeepSeek 时：保持 `enabled: true`，将 `baseUrl`、`model` 换成你所用网关提供的 OpenAI 兼容地址与模型名即可。
+
+`consolidate.autoFlush.enabled` 默认关闭。开启后，capture 成功写入时会在后台按阈值触发 `flush`：pending/stale session 数达到 `minPendingSessions`、距离上次 flush 超过 `minIntervalMinutes`，或待处理内容达到 `maxPendingChars` 时触发。
 
 **`init -y` 时**：会生成 `enabled: false` 的骨架；再次 `init` **不会覆盖**已有 `apiKey`，可安全补配。
 

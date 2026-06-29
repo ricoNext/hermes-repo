@@ -315,10 +315,18 @@ Hook 触发 → 解析对话内容
   },
 
   "consolidate": {
-    "autoArchiveDays": 30
+    "autoArchiveDays": 30,
+    "autoFlush": {
+      "enabled": false,
+      "minPendingSessions": 3,
+      "minIntervalMinutes": 30,
+      "maxPendingChars": 20000
+    }
   }
 }
 ```
+
+`autoFlush.enabled` 开启后，capture 成功写入时会按 pending/stale session 数量、距离上次 flush 的间隔、待处理内容字符数三个阈值后台调度 `hermes flush`。
 
 ### consolidate-state.json
 

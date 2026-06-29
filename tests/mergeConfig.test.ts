@@ -35,6 +35,12 @@ describe("mergeConfigForInit", () => {
     expect(config.llm?.enabled).toBe(false);
     expect(config.consolidate).toBeDefined();
     expect(config.consolidate?.autoArchiveDays).toBe(30);
+    expect(config.consolidate?.autoFlush).toEqual({
+      enabled: false,
+      minPendingSessions: 3,
+      minIntervalMinutes: 30,
+      maxPendingChars: 20_000,
+    });
   });
 
   it("merges init fields into existing config and preserves debug true", () => {
@@ -85,5 +91,47 @@ describe("mergeConfigForInit", () => {
     const { content } = mergeConfigForInit(root, ["claude-code"]);
     const config = JSON.parse(content) as { debug: boolean };
     expect(config.debug).toBe(false);
+  });
+
+  it("preserves existing autoFlush settings on re-init merge", () => {
+    const root = mkdtempSync(join(tmpdir(), "hermes-merge-cfg-"));
+    tempDirs.push(root);
+    mkdirSync(join(root, ".memory"), { recursive: true });
+    writeFileSync(
+      join(root, ".memory", "config.json"),
+      `${JSON.stringify({
+        version: 2,
+        storage: { backend: "file" },
+        assistants: ["claude-code"],
+        consolidate: {
+          autoArchiveDays: 14,
+          autoFlush: {
+            enabled: true,
+            minPendingSessions: 5,
+          },
+        },
+      })}\n`,
+      "utf8",
+    );
+
+    const { content } = mergeConfigForInit(root, ["claude-code"]);
+    const config = JSON.parse(content) as {
+      consolidate: {
+        autoArchiveDays: number;
+        autoFlush: {
+          enabled: boolean;
+          minPendingSessions: number;
+          minIntervalMinutes: number;
+          maxPendingChars: number;
+        };
+      };
+    };
+    expect(config.consolidate.autoArchiveDays).toBe(14);
+    expect(config.consolidate.autoFlush).toEqual({
+      enabled: true,
+      minPendingSessions: 5,
+      minIntervalMinutes: 30,
+      maxPendingChars: 20_000,
+    });
   });
 });
