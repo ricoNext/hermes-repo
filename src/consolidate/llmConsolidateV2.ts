@@ -111,7 +111,11 @@ const CONSOLIDATE_SYSTEM_PROMPT = `你是一个项目知识整理专家。你的
 ## 输出要求
 - 输出严格 JSON 格式
 - knowledgeFiles 数组包含所有需要创建/更新的文件
-  - 每项必须包含完整的 frontmatter 和 body markdown
+  - 每项必须包含 targetPath、action、frontmatter、body
+  - targetPath 是相对 .memory/ 的路径，例如 "domains/canvas/canvas-interaction.md"
+  - 不要使用 path、filePath、filename 等字段代替 targetPath
+  - frontmatter 必须是 JSON 对象，不要输出 YAML 字符串
+  - body 是不包含 frontmatter 的 markdown 正文
 - memoryMd 是完整 MEMORY.md 内容
 - 无价值的 session 在 skippedSessions 中说明原因（而非生成空内容）`;
 
@@ -425,9 +429,15 @@ function validateAndNormalizeLlmResult(
 function normalizeKnowledgeFile(raw: unknown): KnowledgeFileOutput | null {
   if (!raw || typeof raw !== "object") return null;
   const obj = raw as Record<string, unknown>;
+  const targetPath =
+    typeof obj.targetPath === "string"
+      ? obj.targetPath
+      : typeof obj.path === "string"
+        ? obj.path
+        : null;
 
   if (
-    typeof obj.targetPath !== "string" ||
+    !targetPath ||
     !["create", "update"].includes(obj.action as string) ||
     typeof obj.body !== "string"
   ) {
@@ -435,14 +445,59 @@ function normalizeKnowledgeFile(raw: unknown): KnowledgeFileOutput | null {
   }
 
   return {
-    targetPath: obj.targetPath,
+    targetPath,
     action: obj.action as "create" | "update",
-    frontmatter:
-      typeof obj.frontmatter === "object" && obj.frontmatter !== null
-        ? (obj.frontmatter as Record<string, unknown>)
-        : {},
+    frontmatter: normalizeFrontmatter(obj.frontmatter),
     body: obj.body as string,
   };
+}
+
+function normalizeFrontmatter(raw: unknown): Record<string, unknown> {
+  if (raw && typeof raw === "object" && !Array.isArray(raw)) {
+    return raw as Record<string, unknown>;
+  }
+
+  if (typeof raw !== "string") {
+    return {};
+  }
+
+  const text = raw.trim();
+  const yaml = text.startsWith("---")
+    ? text.replace(/^---\r?\n?/, "").replace(/\r?\n?---$/, "")
+    : text;
+  const frontmatter: Record<string, unknown> = {};
+
+  for (const line of yaml.split(/\r?\n/)) {
+    const trimmed = line.trim();
+    if (!trimmed || trimmed.startsWith("#")) {
+      continue;
+    }
+
+    const separator = trimmed.indexOf(":");
+    if (separator <= 0) {
+      continue;
+    }
+
+    const key = trimmed.slice(0, separator).trim();
+    const value = trimmed.slice(separator + 1).trim();
+    frontmatter[key] = parseFrontmatterValue(value);
+  }
+
+  return frontmatter;
+}
+
+function parseFrontmatterValue(value: string): unknown {
+  const unquoted = value.replace(/^["']|["']$/g, "");
+  if (unquoted.startsWith("[") && unquoted.endsWith("]")) {
+    return unquoted
+      .slice(1, -1)
+      .split(",")
+      .map((item) => item.trim().replace(/^["']|["']$/g, ""))
+      .filter(Boolean);
+  }
+  if (unquoted === "true") return true;
+  if (unquoted === "false") return false;
+  return unquoted;
 }
 
 function isSkippedEntry(raw: unknown): raw is { sessionId: string; reason: string } {

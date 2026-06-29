@@ -238,6 +238,50 @@ describe("runConsolidate (v2)", () => {
     expect(log).not.toContain("Bearer k");
   });
 
+  it("accepts LLM knowledge files that use path and YAML frontmatter", async () => {
+    const dir = makeV2Repo({ llm: llmConfig() });
+    writePendingSession(dir, "sess-path", "Canvas interaction and quotation incident.");
+    mockLlmResult({
+      knowledgeFiles: [
+        {
+          path: "domains/canvas/canvas-interaction.md",
+          action: "create",
+          frontmatter:
+            "---\ntitle: 画布交互\ntype: domain-knowledge\ndomain: canvas\ntags: [canvas, interaction]\n---",
+          body: "Canvas interaction notes.",
+        },
+        {
+          path: "incidents/2026-06-26-save-common-quotation-planId.md",
+          action: "create",
+          frontmatter:
+            "---\ntitle: 保存常用报价误传 planId\ntype: incident\ndomain: quoted\n---",
+          body: "Quotation incident notes.",
+        },
+      ],
+      memoryMd:
+        "# 项目知识库\n\n[Canvas](domains/canvas/canvas-interaction.md)\n\n[Incident](incidents/2026-06-26-save-common-quotation-planId.md)",
+      skippedSessions: [],
+    });
+
+    const result = await runConsolidate({
+      repoRoot: dir,
+      config: JSON.parse(readFileSync(join(dir, ".memory", "config.json"), "utf8")),
+    });
+
+    expect(result.knowledgeCreated).toBe(2);
+    const domainFile = readFileSync(
+      join(dir, ".memory", "domains", "canvas", "canvas-interaction.md"),
+      "utf8",
+    );
+    const incidentFile = readFileSync(
+      join(dir, ".memory", "incidents", "2026-06-26-save-common-quotation-planId.md"),
+      "utf8",
+    );
+    expect(domainFile).toContain("title: 画布交互");
+    expect(domainFile).toContain("tags: [canvas, interaction]");
+    expect(incidentFile).toContain("title: 保存常用报价误传 planId");
+  });
+
   it("fails before updating MEMORY.md when it links missing knowledge files", async () => {
     const dir = makeV2Repo({ llm: llmConfig() });
     writePendingSession(dir, "sess-missing", "Canvas interaction rule.");
