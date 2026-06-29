@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.2.5
+
+### Patch Changes
+
+- f043fb9: 将 debug 日志迁移到 .memory/logs 目录，并按 capture、flush、consolidate 分文件记录。
+
 ## 1.2.4
 
 ### Patch Changes
