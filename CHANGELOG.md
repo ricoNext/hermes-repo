@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.1.0
+
+### Minor Changes
+
+- fd4a021: 升级 config 到 v2，添加 llm 和 consolidate 默认配置字段
+
 ## 1.0.0
 
 ### Major Changes
