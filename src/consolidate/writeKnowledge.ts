@@ -1,4 +1,4 @@
-import { existsSync, mkdirSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { memoryPath } from "../init/paths.js";
 import type { KnowledgeFileOutput } from "./llmConsolidateV2.js";
@@ -78,7 +78,7 @@ export function writeMemoryMd(
 
   // 如果已有文件且包含用户编辑标记，尝试保留用户自定义区域
   if (existsSync(memoryPathAbs)) {
-    const existing = require("node:fs").readFileSync(memoryPathAbs, "utf8");
+    const existing = readFileSync(memoryPathAbs, "utf8");
     const preserved = extractUserEditedSections(existing);
     if (preserved.length > 0) {
       memoryMd = injectUserSections(memoryMd, preserved);
