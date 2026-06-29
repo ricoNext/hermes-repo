@@ -2,6 +2,7 @@ import {
   describe, expect, it, vi, beforeEach, afterEach,
 } from "vitest";
 import {
+  existsSync,
   mkdtempSync,
   mkdirSync,
   readFileSync,
@@ -14,6 +15,7 @@ import type { HermesConfig } from "../src/config/types.js";
 import { runConsolidate } from "../src/consolidate/runConsolidate.js";
 
 const tempDirs: string[] = [];
+const originalFetch = globalThis.fetch;
 
 function makeV2Repo(overrides?: Partial<HermesConfig>): string {
   const dir = mkdtempSync(join(tmpdir(), "hermes-flush-"));
@@ -87,10 +89,34 @@ beforeEach(() => {
 });
 
 afterEach(() => {
+  globalThis.fetch = originalFetch;
   for (const dir of tempDirs.splice(0)) {
     rmSync(dir, { recursive: true, force: true });
   }
 });
+
+function llmConfig(): HermesConfig["llm"] {
+  return {
+    enabled: true,
+    provider: "openai",
+    baseUrl: "https://api.example/v1",
+    model: "m",
+    apiKey: "k",
+    timeoutMs: 60_000,
+    maxInputChars: 24_000,
+    mode: "async",
+  };
+}
+
+function mockLlmResult(result: unknown): void {
+  globalThis.fetch = async () =>
+    ({
+      ok: true,
+      json: async () => ({
+        choices: [{ message: { content: JSON.stringify(result) } }],
+      }),
+    }) as Response;
+}
 
 describe("runConsolidate (v2)", () => {
   it("returns ran=false when LLM not configured", async () => {
@@ -135,5 +161,64 @@ describe("runConsolidate (v2)", () => {
       dryRun: true,
     });
     expect(typeof result.ran).toBe("boolean");
+  });
+
+  it("writes MEMORY.md only when linked knowledge files exist", async () => {
+    const dir = makeV2Repo({ llm: llmConfig() });
+    writePendingSession(dir, "sess-ok", "Canvas interaction rule.");
+    mockLlmResult({
+      knowledgeFiles: [
+        {
+          targetPath: "domains/canvas/canvas-interaction.md",
+          action: "create",
+          frontmatter: {
+            title: "Canvas interaction",
+            domain: "canvas",
+            type: "domain-knowledge",
+            status: "active",
+            confidence: "high",
+          },
+          body: "Canvas interaction notes.",
+        },
+      ],
+      memoryMd:
+        "# 项目知识库\n\n[Canvas interaction](domains/canvas/canvas-interaction.md)",
+      skippedSessions: [],
+    });
+
+    const result = await runConsolidate({
+      repoRoot: dir,
+      config: JSON.parse(readFileSync(join(dir, ".memory", "config.json"), "utf8")),
+    });
+
+    expect(result.ran).toBe(true);
+    expect(existsSync(join(dir, ".memory", "domains", "canvas", "canvas-interaction.md"))).toBe(true);
+    expect(readFileSync(join(dir, ".memory", "MEMORY.md"), "utf8")).toContain(
+      "domains/canvas/canvas-interaction.md",
+    );
+  });
+
+  it("fails before updating MEMORY.md when it links missing knowledge files", async () => {
+    const dir = makeV2Repo({ llm: llmConfig() });
+    writePendingSession(dir, "sess-missing", "Canvas interaction rule.");
+    const originalMemory = readFileSync(join(dir, ".memory", "MEMORY.md"), "utf8");
+    mockLlmResult({
+      knowledgeFiles: [],
+      memoryMd:
+        "# 项目知识库\n\n[Canvas interaction](domains/canvas/canvas-interaction.md)",
+      skippedSessions: [],
+    });
+
+    await expect(
+      runConsolidate({
+        repoRoot: dir,
+        config: JSON.parse(readFileSync(join(dir, ".memory", "config.json"), "utf8")),
+      }),
+    ).rejects.toThrow("MEMORY.md 引用了不存在的知识文件");
+
+    expect(readFileSync(join(dir, ".memory", "MEMORY.md"), "utf8")).toBe(originalMemory);
+    expect(readFileSync(join(dir, ".memory", "captures", "raw", "session-sess-missing.md"), "utf8")).toContain(
+      "status: pending",
+    );
   });
 });

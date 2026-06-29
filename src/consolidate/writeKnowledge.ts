@@ -11,6 +11,14 @@ export interface WriteKnowledgeResult {
   failed: string[];
 }
 
+const KNOWLEDGE_LINK_PREFIXES = [
+  "rules/",
+  "domains/",
+  "workflows/",
+  "decisions/",
+  "incidents/",
+];
+
 // ─── 写入知识文件 ─────────────────────────────
 
 /**
@@ -87,6 +95,58 @@ export function writeMemoryMd(
 
   mkdirSync(memoryPath(repoRoot), { recursive: true });
   writeFileSync(memoryPathAbs, `${memoryMd}\n`, "utf8");
+}
+
+export function assertMemoryKnowledgeLinksExist(
+  repoRoot: string,
+  memoryMd: string,
+): void {
+  const missing = findMissingKnowledgeLinks(repoRoot, memoryMd);
+  if (missing.length > 0) {
+    throw new Error(
+      `MEMORY.md 引用了不存在的知识文件: ${missing.join(", ")}`,
+    );
+  }
+}
+
+function findMissingKnowledgeLinks(repoRoot: string, memoryMd: string): string[] {
+  const links = extractKnowledgeLinks(memoryMd);
+  return links.filter((link) => !existsSync(memoryPath(repoRoot, link)));
+}
+
+function extractKnowledgeLinks(memoryMd: string): string[] {
+  const links = new Set<string>();
+  const markdownLink = /\[[^\]]+\]\(([^)]+)\)/g;
+  let match: RegExpExecArray | null;
+
+  while ((match = markdownLink.exec(memoryMd)) !== null) {
+    const normalized = normalizeKnowledgeLink(match[1]);
+    if (normalized) {
+      links.add(normalized);
+    }
+  }
+
+  return [...links];
+}
+
+function normalizeKnowledgeLink(rawLink: string): string | null {
+  const withoutAnchor = rawLink.split("#")[0].trim();
+  const withoutDotSlash = withoutAnchor.startsWith("./")
+    ? withoutAnchor.slice(2)
+    : withoutAnchor;
+
+  if (
+    withoutDotSlash.includes("://") ||
+    withoutDotSlash.startsWith("/") ||
+    withoutDotSlash.includes("..") ||
+    !withoutDotSlash.endsWith(".md")
+  ) {
+    return null;
+  }
+
+  return KNOWLEDGE_LINK_PREFIXES.some((prefix) => withoutDotSlash.startsWith(prefix))
+    ? withoutDotSlash
+    : null;
 }
 
 // ─── 序列化知识文件 ─────────────────────────

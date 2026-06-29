@@ -1,6 +1,5 @@
 import { spawnSync } from "node:child_process";
 import {
-  existsSync,
   mkdirSync,
   mkdtempSync,
   readFileSync,
@@ -19,7 +18,21 @@ function seedV2(dir: string): void {
   mkdirSync(join(dir, ".memory", "captures", "raw"), { recursive: true });
   writeFileSync(
     join(dir, ".memory", "config.json"),
-    `${JSON.stringify({ version: 1, storage: { backend: "file" }, assistants: ["claude-code"], debug: false })}\n`,
+    `${JSON.stringify({
+      version: 1,
+      storage: { backend: "file" },
+      assistants: ["claude-code"],
+      debug: false,
+      consolidate: {
+        autoArchiveDays: 30,
+        autoFlush: {
+          enabled: false,
+          minPendingSessions: 3,
+          minIntervalMinutes: 30,
+          maxPendingChars: 20000,
+        },
+      },
+    })}\n`,
   );
   // 写入 v2 格式的 session 文件
   writeFileSync(
@@ -71,5 +84,38 @@ describe("flush CLI (v2)", () => {
     // MEMORY.md 已由 seed 创建，检查其内容未被修改
     const memory = readFileSync(join(dir, ".memory", "MEMORY.md"), "utf8");
     expect(memory).toContain("consolidate 后自动填充");
+  });
+
+  it("writes flush progress to debug log when debug is enabled", () => {
+    const dir = mkdtempSync(join(tmpdir(), "hermes-flush-debug-"));
+    seedV2(dir);
+    const configPath = join(dir, ".memory", "config.json");
+    const config = JSON.parse(readFileSync(configPath, "utf8")) as Record<string, unknown>;
+    config.version = 2;
+    config.debug = true;
+    config.llm = {
+      enabled: true,
+      provider: "openai",
+      baseUrl: "https://api.example/v1",
+      model: "m",
+      apiKey: "k",
+      timeoutMs: 60_000,
+      maxInputChars: 24_000,
+      mode: "async",
+    };
+    writeFileSync(configPath, `${JSON.stringify(config)}\n`);
+
+    const r = spawnSync(
+      process.execPath,
+      [cliPath, "flush", "-C", dir, "--dry-run"],
+      { encoding: "utf8" },
+    );
+
+    expect(r.status).toBe(0);
+    const log = readFileSync(join(dir, ".memory", "hermes-debug.log"), "utf8");
+    expect(log).toContain("hermes-repo [flush] start");
+    expect(log).toContain("hermes-repo [consolidate] start");
+    expect(log).toContain("dry-run: would process");
+    expect(log).toContain("hermes-repo [flush] result");
   });
 });

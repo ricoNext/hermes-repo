@@ -11,7 +11,11 @@ import {
   buildLlmConsolidateInput,
   callLlmConsolidate,
 } from "./llmConsolidateV2.js";
-import { writeKnowledgeFiles, writeMemoryMd } from "./writeKnowledge.js";
+import {
+  assertMemoryKnowledgeLinksExist,
+  writeKnowledgeFiles,
+  writeMemoryMd,
+} from "./writeKnowledge.js";
 import { archiveDoneSessions } from "./archive.js";
 import { markSessionConsolidated } from "../capture/writeCapture.js";
 
@@ -52,11 +56,18 @@ export async function runConsolidate(
 ): Promise<ConsolidateResultV2> {
   const { repoRoot, config, force, dryRun, debug } = opts;
 
+  debugLog(
+    debug === true,
+    "consolidate",
+    `start: force=${force === true}, dryRun=${dryRun === true}`,
+  );
   writeConsolidateLock(repoRoot);
+  debugLog(debug === true, "consolidate", "lock acquired");
   try {
     const llmConfig: LlmConfigV2 = config.llm;
 
     if (!llmConfig.enabled) {
+      debugLog(debug === true, "consolidate", "skip: llm not enabled");
       return {
         ran: false,
         reason: "llm-not-enabled",
@@ -81,6 +92,7 @@ export async function runConsolidate(
     );
 
     if (pendingSessions.length === 0 && !force) {
+      debugLog(debug === true, "consolidate", "skip: no pending sessions");
       return {
         ran: false,
         reason: "no-pending-sessions",
@@ -94,6 +106,11 @@ export async function runConsolidate(
 
     // dry-run：只返回预览信息
     if (dryRun) {
+      debugLog(
+        debug === true,
+        "consolidate",
+        `dry-run: would process ${pendingSessions.length} session(s)`,
+      );
       return {
         ran: true,
         reason: "dry-run",
@@ -107,7 +124,11 @@ export async function runConsolidate(
 
     // Step 2: 构造 LLM 输入
     const llmInput = buildLlmConsolidateInput(repoRoot, pendingSessions);
-    debugLog(debug === true, "consolidate", `LLM 输入: ${llmInput.pendingSessions.length} sessions, ${llmInput.existingKnowledge.length} existing knowledge`);
+    debugLog(
+      debug === true,
+      "consolidate",
+      `LLM 输入: ${llmInput.pendingSessions.length} sessions, ${llmInput.existingKnowledge.length} existing knowledge`,
+    );
 
     // Step 3: 单次 LLM 调用
     let llmResult;
@@ -125,10 +146,36 @@ export async function runConsolidate(
     );
 
     // Step 4: 写入知识文件 + MEMORY.md
+    debugLog(debug === true, "consolidate", "writing knowledge files");
     const writeResult = writeKnowledgeFiles(repoRoot, llmResult.knowledgeFiles);
+    if (writeResult.failed.length > 0) {
+      debugLog(
+        debug === true,
+        "consolidate",
+        `write failed: ${writeResult.failed.join(", ")}`,
+      );
+      throw new Error(
+        `知识文件写入失败: ${writeResult.failed.join(", ")}`,
+      );
+    }
+    debugLog(
+      debug === true,
+      "consolidate",
+      `knowledge files written: created=${writeResult.created.length}, updated=${writeResult.updated.length}`,
+    );
+
+    debugLog(debug === true, "consolidate", "validating MEMORY.md links");
+    assertMemoryKnowledgeLinksExist(repoRoot, llmResult.memoryMd);
+    debugLog(debug === true, "consolidate", "MEMORY.md links ok");
+    debugLog(debug === true, "consolidate", "writing MEMORY.md");
     writeMemoryMd(repoRoot, llmResult.memoryMd);
 
     // Step 5: 更新 session 状态为 done
+    debugLog(
+      debug === true,
+      "consolidate",
+      `marking sessions done: ${pendingSessions.length} processed, ${llmResult.skippedSessions.length} skipped`,
+    );
     const processedSessionIds = new Set<string>();
     for (const s of pendingSessions) {
       markSessionConsolidated(repoRoot, s.sessionId);
@@ -144,6 +191,7 @@ export async function runConsolidate(
     const prevState = readConsolidateState(repoRoot);
     const newDomains = extractDomainsFromResults(llmResult.knowledgeFiles);
 
+    debugLog(debug === true, "consolidate", "updating consolidate state");
     writeConsolidateState(repoRoot, {
       version: 2,
       lastConsolidatedAt: new Date().toISOString(),
@@ -173,6 +221,13 @@ export async function runConsolidate(
       allSessions,
       config.consolidate.autoArchiveDays,
     );
+    debugLog(debug === true, "consolidate", `archived sessions: ${archived}`);
+
+    debugLog(
+      debug === true,
+      "consolidate",
+      `done: sessions=${pendingSessions.length}, created=${writeResult.created.length}, updated=${writeResult.updated.length}, skipped=${llmResult.skippedSessions.length}, archived=${archived}`,
+    );
 
     return {
       ran: true,
@@ -184,6 +239,7 @@ export async function runConsolidate(
     };
   } finally {
     releaseConsolidateLock(repoRoot);
+    debugLog(debug === true, "consolidate", "lock released");
   }
 }
 

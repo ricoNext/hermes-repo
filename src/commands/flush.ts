@@ -1,6 +1,8 @@
 import { hookExit } from "../hookExit.js";
 import { runFlushCommand } from "../consolidate/scheduleConsolidate.js";
 import type { ConsolidateResultV2 } from "../consolidate/runConsolidate.js";
+import { configureDebugLogging, debugLog } from "../config/debugLog.js";
+import { loadRepoContext } from "../config/readConfig.js";
 
 export async function runFlushCommandCli(opts: {
   cwd?: string;
@@ -8,12 +10,26 @@ export async function runFlushCommandCli(opts: {
   dryRun?: boolean;
   strict?: boolean;
 }): Promise<void> {
+  const ctx = loadRepoContext(opts.cwd);
+  const debug = ctx?.config.debug === true;
+  configureDebugLogging(ctx?.repoRoot ?? null, debug);
+  debugLog(
+    debug,
+    "flush",
+    `start: force=${opts.force === true}, dryRun=${opts.dryRun === true}`,
+  );
+
   try {
     const result = await runFlushCommand({
       cwd: opts.cwd,
       force: opts.force,
       dryRun: opts.dryRun,
     });
+    debugLog(
+      debug,
+      "flush",
+      `result: ran=${result.ran}, reason=${result.reason ?? "ok"}, sessions=${result.sessionsProcessed}, created=${result.knowledgeCreated}, updated=${result.knowledgeUpdated}, skipped=${result.skippedCount}, archived=${result.archived}`,
+    );
 
     if (result.ran) {
       if (result.reason === "dry-run") {
@@ -56,6 +72,11 @@ export async function runFlushCommandCli(opts: {
 
     hookExit(0, opts.strict);
   } catch (err) {
+    debugLog(
+      debug,
+      "flush",
+      `error: ${err instanceof Error ? err.message : String(err)}`,
+    );
     console.error(
       `hermes-repo flush: ${err instanceof Error ? err.message : String(err)}`,
     );
