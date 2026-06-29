@@ -248,16 +248,15 @@ export async function callLlmConsolidate(
   input: LlmConsolidateInput,
   llmConfig: LlmConfigV2,
 ): Promise<LlmConsolidateResult> {
-  const apiKey = process.env.HERMES_LLM_API_KEY;
-  if (!apiKey) {
-    throw new Error(
-      "LLM 未配置：请设置 HERMES_LLM_API_KEY 环境变量",
-    );
-  }
-
   if (!llmConfig.enabled) {
     throw new Error(
       "LLM 未启用：请在 config.json 中设置 llm.enabled = true",
+    );
+  }
+
+  if (!llmConfig.apiKey.trim() || !llmConfig.baseUrl.trim() || !llmConfig.model.trim()) {
+    throw new Error(
+      "LLM 未配置：请在 config.json 中设置 llm.apiKey、llm.baseUrl 和 llm.model",
     );
   }
 
@@ -274,7 +273,7 @@ export async function callLlmConsolidate(
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${apiKey}`,
+        Authorization: `Bearer ${llmConfig.apiKey}`,
       },
       body: JSON.stringify({
         model: llmConfig.model,

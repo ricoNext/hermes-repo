@@ -1,15 +1,7 @@
-export type LlmCaptureMode = "async" | "sync";
+import type { LlmConfigV2 } from "./types.js";
 
-export interface LlmConfig {
-  enabled: boolean;
-  provider?: string;
-  baseUrl: string;
-  model: string;
-  apiKey: string;
-  timeoutMs: number;
-  maxInputChars: number;
-  mode: LlmCaptureMode;
-}
+export type LlmCaptureMode = "async" | "sync";
+export type LlmConfig = LlmConfigV2;
 
 export const DEFAULT_LLM_TIMEOUT_MS = 60_000;
 export const DEFAULT_LLM_MAX_INPUT_CHARS = 24_000;
@@ -40,12 +32,7 @@ export function isLlmAvailable(cfg: LlmConfig | null): boolean {
   );
 }
 
-/** Env forces sync for tests; otherwise uses llm.json mode */
 export function effectiveLlmMode(cfg: LlmConfig): LlmCaptureMode {
-  const forceSync = process.env.HERMES_LLM_SYNC;
-  if (forceSync === "1" || forceSync === "true") {
-    return "sync";
-  }
   return cfg.mode === "sync" ? "sync" : "async";
 }
 

@@ -1,12 +1,12 @@
 # >>> hermes-repo memory (do not edit this block manually)
 # 不提交（个人数据 / 运行时状态）
+.memory/config.json
 .memory/captures/
 .memory/consolidate-state.json
 .memory/.consolidate.lock
 
 # 提交到 Git（团队共享的知识）
 !.memory/MEMORY.md
-!.memory/config.json
 !.memory/rules/
 !.memory/domains/
 !.memory/workflows/

@@ -2,8 +2,13 @@ import type { AssistantId } from "../init/assistants/types.js";
 
 export interface LlmConfigV2 {
   enabled: boolean;
+  provider?: string;
   baseUrl: string;
   model: string;
+  apiKey: string;
+  timeoutMs: number;
+  maxInputChars: number;
+  mode: "async" | "sync";
 }
 
 export interface ConsolidateConfig {

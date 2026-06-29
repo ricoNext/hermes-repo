@@ -35,23 +35,21 @@ function makeRepoWithLlm(): string {
   writeFileSync(
     join(dir, ".memory", "config.json"),
     `${JSON.stringify({
-      version: 1,
+      version: 2,
       storage: { backend: "file" },
       assistants: ["claude-code"],
       debug: false,
-    })}\n`,
-  );
-  writeFileSync(
-    join(dir, ".memory", "llm.json"),
-    `${JSON.stringify({
-      enabled: true,
-      provider: "openai",
-      baseUrl: "https://api.example/v1",
-      model: "m",
-      apiKey: "k",
-      timeoutMs: 5000,
-      maxInputChars: 8000,
-      mode: "async",
+      llm: {
+        enabled: true,
+        provider: "openai",
+        baseUrl: "https://api.example/v1",
+        model: "m",
+        apiKey: "k",
+        timeoutMs: 5000,
+        maxInputChars: 8000,
+        mode: "async",
+      },
+      consolidate: { autoArchiveDays: 30 },
     })}\n`,
   );
   writeFileSync(

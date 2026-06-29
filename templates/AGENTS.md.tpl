@@ -84,14 +84,10 @@ npx @riconext/hermes-repo flush
   "llm": {
     "enabled": true,
     "baseUrl": "https://api.openai.com/v1",
-    "model": "gpt-4o"
+    "model": "gpt-4o",
+    "apiKey": "sk-..."
   }
 }
-```
-
-API Key 通过环境变量设置：
-```bash
-export HERMES_LLM_API_KEY="sk-..."
 ```
 
 ## 常用命令

@@ -1,6 +1,6 @@
 import { debugLog } from "../config/debugLog.js";
 import { effectiveLlmMode, isLlmAvailable } from "../config/llmConfig.js";
-import { readLlmConfigAtRepo } from "../config/readLlmConfig.js";
+import { readConfigAtRepo } from "../config/readConfig.js";
 import type { AssistantId } from "../init/assistants/types.js";
 import { enqueueLlmJob } from "./enqueueLlmJob.js";
 import { llmFormat, simpleFormat } from "./formatCapture.js";
@@ -53,7 +53,7 @@ export async function commitCapture(
 
   // v2: 不再维护 sessions/index.json
 
-  const llm = readLlmConfigAtRepo(repoRoot);
+  const llm = readConfigAtRepo(repoRoot)?.llm ?? null;
   if (!isLlmAvailable(llm) || !needsLlm(session)) {
     debugLog(debug === true, "capture", `ok: ${captureFile} (format=simple)`);
     return finishCapture(repoRoot, debug, {

@@ -264,7 +264,7 @@ Hook 触发 → 解析对话内容
 ```
 # 提交到 Git（团队共享的知识）
 .memory/MEMORY.md
-.memory/config.json              # apiKey 字段运行时注入或用环境变量
+.memory/config.json              # 个人配置，包含 LLM apiKey，不提交
 .memory/rules/
 .memory/domains/
 .memory/workflows/
@@ -276,7 +276,7 @@ Hook 触发 → 解析对话内容
 .memory/consolidate-state.json  # 运行时状态
 ```
 
-> **注意**: `config.json` 中 LLM 的 `apiKey` 敏感字段应通过环境变量 `HERMES_LLM_API_KEY` 注入，或使用 `.env` 文件（gitignored），避免密钥泄露。
+> **注意**: `config.json` 中 LLM 的 `apiKey` 是敏感字段，`.memory/config.json` 应保持 gitignored，不要提交到 Git。
 
 ## CLI 命令
 
@@ -307,8 +307,11 @@ Hook 触发 → 解析对话内容
   "llm": {
     "enabled": true,
     "baseUrl": "https://api.openai.com/v1",
-    "model": "gpt-4o"
-    // apiKey 通过 HERMES_LLM_API_KEY 环境变量注入
+    "model": "gpt-4o",
+    "apiKey": "sk-...",
+    "timeoutMs": 60000,
+    "maxInputChars": 24000,
+    "mode": "async"
   },
 
   "consolidate": {
@@ -351,7 +354,7 @@ Hook 触发 → 解析对话内容
 
 **LLM 是 v2 的硬性依赖，不提供降级模式。**
 
-- 未配置 LLM 时执行 `hermes flush` → 报错提示：`LLM 未配置，请设置 llm.baseUrl / llm.model 和 HERMES_LLM_API_KEY 环境变量`
+- 未配置 LLM 时执行 `hermes flush` → 报错提示：`LLM 未配置，请在 config.json 中设置 llm.apiKey / llm.baseUrl / llm.model`
 - 设计理由：v2 的核心价值就是 LLM 提炼，降级到"简单拼接"只会复现 v1 的问题
 
 ## 归档策略

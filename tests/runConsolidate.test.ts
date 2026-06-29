@@ -27,7 +27,16 @@ function makeV2Repo(overrides?: Partial<HermesConfig>): string {
     storage: { backend: "file" },
     assistants: ["claude-code"],
     debug: true,
-    llm: { enabled: false, baseUrl: "", model: "" },
+    llm: {
+      enabled: false,
+      provider: "openai",
+      baseUrl: "",
+      model: "",
+      apiKey: "",
+      timeoutMs: 60_000,
+      maxInputChars: 24_000,
+      mode: "async",
+    },
     ...overrides,
   };
   writeFileSync(

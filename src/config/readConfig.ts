@@ -17,8 +17,19 @@ function parseLlmConfig(raw: Record<string, unknown>): LlmConfigV2 {
   const llm = raw.llm as Record<string, unknown> | undefined;
   return {
     enabled: typeof llm?.enabled === "boolean" ? llm.enabled : false,
+    provider: typeof llm?.provider === "string" ? llm.provider : "openai",
     baseUrl: typeof llm?.baseUrl === "string" ? llm.baseUrl : "https://api.openai.com/v1",
     model: typeof llm?.model === "string" ? llm.model : "gpt-4o",
+    apiKey: typeof llm?.apiKey === "string" ? llm.apiKey : "",
+    timeoutMs:
+      typeof llm?.timeoutMs === "number" && llm.timeoutMs > 0
+        ? llm.timeoutMs
+        : 60_000,
+    maxInputChars:
+      typeof llm?.maxInputChars === "number" && llm.maxInputChars > 0
+        ? llm.maxInputChars
+        : 24_000,
+    mode: llm?.mode === "sync" ? "sync" : "async",
   };
 }
 
@@ -60,7 +71,16 @@ export function readConfigAtRepo(repoRoot: string): HermesConfig | null {
         storage: { backend: "file" },
         assistants,
         debug: raw.debug === true,
-        llm: { enabled: false, baseUrl: "https://api.openai.com/v1", model: "gpt-4o" },
+        llm: {
+          enabled: false,
+          provider: "openai",
+          baseUrl: "https://api.openai.com/v1",
+          model: "gpt-4o",
+          apiKey: "",
+          timeoutMs: 60_000,
+          maxInputChars: 24_000,
+          mode: "async",
+        },
         consolidate: { autoArchiveDays: 30 },
       };
     }

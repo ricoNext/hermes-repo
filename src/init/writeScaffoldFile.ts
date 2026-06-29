@@ -20,8 +20,13 @@ export function buildConfigJson(assistants: AssistantId[]): string {
       debug: false,
       llm: {
         enabled: false,
+        provider: "openai",
         baseUrl: "https://api.openai.com/v1",
         model: "gpt-4o",
+        apiKey: "",
+        timeoutMs: 60_000,
+        maxInputChars: 24_000,
+        mode: "async",
       },
       consolidate: {
         autoArchiveDays: 30,
@@ -68,7 +73,7 @@ export function writeScaffoldFiles(
 
   writeConfigJson(report, repoRoot, assistants);
 
-  // v2: 不再生成 llm.json（已合并入 config.json）
+  // v2: LLM settings live in config.json.
 
   // MEMORY.md — v2 导航模板
   writeIfAllowed(

@@ -2,7 +2,7 @@ import { existsSync, readFileSync, renameSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { debugLog } from "../config/debugLog.js";
 import { isLlmAvailable } from "../config/llmConfig.js";
-import { readLlmConfigAtRepo } from "../config/readLlmConfig.js";
+import { readConfigAtRepo } from "../config/readConfig.js";
 import { parseJsonlFile } from "./claude-code/parseJsonl.js";
 import {
   deleteLlmJob,
@@ -32,7 +32,7 @@ export async function runLlmJob(
     return { ok: true, reason: "already-upgraded" };
   }
 
-  const llm = readLlmConfigAtRepo(repoRoot);
+  const llm = readConfigAtRepo(repoRoot)?.llm ?? null;
   if (!isLlmAvailable(llm)) {
     return { ok: false, reason: "llm not available" };
   }

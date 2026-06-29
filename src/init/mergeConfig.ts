@@ -6,8 +6,13 @@ import { memoryPath } from "./paths.js";
 /** v2: init 每次都会写入的完整 config 字段（已有自定义值优先保留） */
 const DEFAULT_LLM = {
   enabled: false,
+  provider: "openai",
   baseUrl: "https://api.openai.com/v1",
   model: "gpt-4o",
+  apiKey: "",
+  timeoutMs: 60_000,
+  maxInputChars: 24_000,
+  mode: "async",
 };
 
 const DEFAULT_CONSOLIDATE = {

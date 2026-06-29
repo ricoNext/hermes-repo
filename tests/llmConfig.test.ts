@@ -1,14 +1,12 @@
-import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 import {
-  DEFAULT_LLM_BASE_URL,
-  DEFAULT_LLM_MODEL,
   isLlmAvailable,
 } from "../src/config/llmConfig.js";
-import { readLlmConfigAtRepo } from "../src/config/readLlmConfig.js";
-import { mergeLlmConfigForInit } from "../src/init/mergeLlmConfig.js";
+import { readConfigAtRepo } from "../src/config/readConfig.js";
+import { mergeConfigForInit } from "../src/init/mergeConfig.js";
 
 const tempDirs: string[] = [];
 
@@ -26,9 +24,9 @@ function makeRepo(): string {
 }
 
 describe("llm config", () => {
-  it("readLlmConfigAtRepo returns null when missing", () => {
+  it("readConfigAtRepo returns null when config is missing", () => {
     const repo = makeRepo();
-    expect(readLlmConfigAtRepo(repo)).toBeNull();
+    expect(readConfigAtRepo(repo)).toBeNull();
   });
 
   it("isLlmAvailable requires enabled and credentials", () => {
@@ -56,35 +54,52 @@ describe("llm config", () => {
     ).toBe(true);
   });
 
-  it("mergeLlmConfigForInit uses DeepSeek defaults for new llm.json", () => {
+  it("mergeConfigForInit writes LLM fields into config.json", () => {
     const repo = makeRepo();
-    const { content } = mergeLlmConfigForInit(repo, { enabled: false });
-    const parsed = JSON.parse(content) as { baseUrl: string; model: string };
-    expect(parsed.baseUrl).toBe(DEFAULT_LLM_BASE_URL);
-    expect(parsed.model).toBe(DEFAULT_LLM_MODEL);
+    const { content } = mergeConfigForInit(repo, ["claude-code"]);
+    const parsed = JSON.parse(content) as {
+      llm: {
+        enabled: boolean;
+        baseUrl: string;
+        model: string;
+        apiKey: string;
+        timeoutMs: number;
+        maxInputChars: number;
+        mode: string;
+      };
+    };
+    expect(parsed.llm.enabled).toBe(false);
+    expect(parsed.llm.baseUrl).toBe("https://api.openai.com/v1");
+    expect(parsed.llm.model).toBe("gpt-4o");
+    expect(parsed.llm.apiKey).toBe("");
+    expect(parsed.llm.timeoutMs).toBe(60_000);
+    expect(parsed.llm.maxInputChars).toBe(24_000);
+    expect(parsed.llm.mode).toBe("async");
   });
 
-  it("mergeLlmConfigForInit preserves existing apiKey when not provided", () => {
+  it("mergeConfigForInit preserves existing apiKey", () => {
     const repo = makeRepo();
     writeFileSync(
-      join(repo, ".memory/llm.json"),
+      join(repo, ".memory/config.json"),
       `${JSON.stringify({
-        enabled: true,
-        baseUrl: "https://api.openai.com/v1",
-        model: "old-model",
-        apiKey: "secret-key",
-        timeoutMs: 60000,
-        maxInputChars: 24000,
-        mode: "async",
+        version: 2,
+        storage: { backend: "file" },
+        assistants: ["claude-code"],
+        llm: {
+          enabled: true,
+          baseUrl: "https://api.openai.com/v1",
+          model: "old-model",
+          apiKey: "secret-key",
+          timeoutMs: 60000,
+          maxInputChars: 24000,
+          mode: "async",
+        },
       })}\n`,
       "utf8",
     );
-    const { content } = mergeLlmConfigForInit(repo, {
-      enabled: true,
-      model: "new-model",
-    });
-    const parsed = JSON.parse(content) as { apiKey: string; model: string };
-    expect(parsed.apiKey).toBe("secret-key");
-    expect(parsed.model).toBe("new-model");
+    const { content } = mergeConfigForInit(repo, ["claude-code"]);
+    const parsed = JSON.parse(content) as { llm: { apiKey: string; model: string } };
+    expect(parsed.llm.apiKey).toBe("secret-key");
+    expect(parsed.llm.model).toBe("old-model");
   });
 });
