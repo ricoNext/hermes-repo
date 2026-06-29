@@ -4,7 +4,8 @@ import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 import {
   configureDebugLogging,
-  DEBUG_LOG_FILE,
+  DEBUG_LOG_DIR,
+  DEBUG_LOG_FILES,
   debugLog,
 } from "../src/config/debugLog.js";
 import { memoryPath } from "../src/init/paths.js";
@@ -35,9 +36,9 @@ afterEach(() => {
 });
 
 describe("debug log file", () => {
-  it("appends to .memory/hermes-debug.log when debug enabled", () => {
+  it("appends capture logs to .memory/logs/capture.log when debug enabled", () => {
     const repo = makeRepo(true);
-    const logPath = memoryPath(repo, DEBUG_LOG_FILE);
+    const logPath = memoryPath(repo, DEBUG_LOG_DIR, DEBUG_LOG_FILES.capture);
 
     configureDebugLogging(repo, true);
     debugLog(true, "capture", "skip: no session jsonl found");
@@ -50,11 +51,29 @@ describe("debug log file", () => {
 
   it("does not create log file when debug disabled", () => {
     const repo = makeRepo(false);
-    const logPath = memoryPath(repo, DEBUG_LOG_FILE);
+    const logPath = memoryPath(repo, DEBUG_LOG_DIR, DEBUG_LOG_FILES.capture);
 
     configureDebugLogging(repo, false);
     debugLog(false, "capture", "should not appear");
 
     expect(existsSync(logPath)).toBe(false);
+  });
+
+  it("routes flush and consolidate logs to separate files", () => {
+    const repo = makeRepo(true);
+    const flushLogPath = memoryPath(repo, DEBUG_LOG_DIR, DEBUG_LOG_FILES.flush);
+    const consolidateLogPath = memoryPath(repo, DEBUG_LOG_DIR, DEBUG_LOG_FILES.consolidate);
+
+    configureDebugLogging(repo, true);
+    debugLog(true, "flush", "start");
+    debugLog(true, "consolidate", "lock acquired");
+    debugLog(true, "llm", "request");
+
+    const flushLog = readFileSync(flushLogPath, "utf8");
+    const consolidateLog = readFileSync(consolidateLogPath, "utf8");
+    expect(flushLog).toContain("hermes-repo [flush] start");
+    expect(flushLog).not.toContain("lock acquired");
+    expect(consolidateLog).toContain("hermes-repo [consolidate] lock acquired");
+    expect(consolidateLog).toContain("hermes-repo [llm] request");
   });
 });

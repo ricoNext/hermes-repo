@@ -229,7 +229,7 @@ describe("runConsolidate (v2)", () => {
       debug: true,
     });
 
-    const log = readFileSync(join(dir, ".memory", "hermes-debug.log"), "utf8");
+    const log = readFileSync(join(dir, ".memory", "logs", "consolidate.log"), "utf8");
     expect(log).toContain("hermes-repo [llm] request:");
     expect(log).toContain("hermes-repo [llm] response json BEGIN");
     expect(log).toContain("hermes-repo [llm] raw message content BEGIN");

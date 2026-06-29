@@ -1,33 +1,53 @@
 import { appendFileSync, mkdirSync } from "node:fs";
-import { dirname } from "node:path";
+import { join } from "node:path";
 import type { RepoContext } from "./types.js";
 import { memoryPath } from "../init/paths.js";
 
-export const DEBUG_LOG_FILE = "hermes-debug.log";
+export const DEBUG_LOG_DIR = "logs";
+export const DEBUG_LOG_FILES = {
+  capture: "capture.log",
+  flush: "flush.log",
+  consolidate: "consolidate.log",
+} as const;
 
-let logFilePath: string | null = null;
+let logDirPath: string | null = null;
 
 export function configureDebugLogging(
   repoRoot: string | null,
   enabled: boolean,
 ): void {
   if (!enabled || !repoRoot) {
-    logFilePath = null;
+    logDirPath = null;
     return;
   }
-  logFilePath = memoryPath(repoRoot, DEBUG_LOG_FILE);
+  logDirPath = memoryPath(repoRoot, DEBUG_LOG_DIR);
 }
 
 function formatLine(phase: string, message: string): string {
   return `${new Date().toISOString()} hermes-repo [${phase}] ${message}`;
 }
 
-function writeToLogFile(line: string): void {
-  if (!logFilePath) {
+function writeToLogFile(phase: string, line: string): void {
+  if (!logDirPath) {
     return;
   }
-  mkdirSync(dirname(logFilePath), { recursive: true });
-  appendFileSync(logFilePath, `${line}\n`, "utf8");
+  mkdirSync(logDirPath, { recursive: true });
+  appendFileSync(join(logDirPath, logFileNameForPhase(phase)), `${line}\n`, "utf8");
+}
+
+function logFileNameForPhase(phase: string): string {
+  switch (phase) {
+    case "capture":
+    case "capture-llm":
+      return DEBUG_LOG_FILES.capture;
+    case "flush":
+      return DEBUG_LOG_FILES.flush;
+    case "consolidate":
+    case "llm":
+      return DEBUG_LOG_FILES.consolidate;
+    default:
+      return `${phase.replace(/[^a-z0-9_-]/gi, "-") || "debug"}.log`;
+  }
 }
 
 export function debugLog(
@@ -40,7 +60,7 @@ export function debugLog(
   }
   const line = formatLine(phase, message);
   console.error(line);
-  writeToLogFile(line);
+  writeToLogFile(phase, line);
 }
 
 export function debugLogBlock(

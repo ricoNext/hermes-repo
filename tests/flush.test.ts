@@ -112,10 +112,11 @@ describe("flush CLI (v2)", () => {
     );
 
     expect(r.status).toBe(0);
-    const log = readFileSync(join(dir, ".memory", "hermes-debug.log"), "utf8");
-    expect(log).toContain("hermes-repo [flush] start");
-    expect(log).toContain("hermes-repo [consolidate] start");
-    expect(log).toContain("dry-run: would process");
-    expect(log).toContain("hermes-repo [flush] result");
+    const flushLog = readFileSync(join(dir, ".memory", "logs", "flush.log"), "utf8");
+    const consolidateLog = readFileSync(join(dir, ".memory", "logs", "consolidate.log"), "utf8");
+    expect(flushLog).toContain("hermes-repo [flush] start");
+    expect(flushLog).toContain("hermes-repo [flush] result");
+    expect(consolidateLog).toContain("hermes-repo [consolidate] start");
+    expect(consolidateLog).toContain("dry-run: would process");
   });
 });

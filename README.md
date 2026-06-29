@@ -309,7 +309,7 @@ npx @riconext/hermes-repo init
 npx @riconext/hermes-repo capture-llm --flush
 
 # 查看 hook / capture 日志
-# 在 .memory/config.json 设 "debug": true，然后 tail -f .memory/hermes-debug.log
+# 在 .memory/config.json 设 "debug": true，然后 tail -f .memory/logs/capture.log
 ```
 
 升级成功的 capture 会在 frontmatter 中带 `llmUpgradedAt`。若长期无升级，检查 `enabled`、`apiKey`、网络及 `baseUrl` 是否可达。
@@ -414,7 +414,7 @@ bun install && bun run build && bun run test
 ```
 
 本地调试：`node dist/cli.js --help`  
-Hook 排障：在 `.memory/config.json` 中设置 `"debug": true`，查看 `.memory/hermes-debug.log`。
+Hook 排障：在 `.memory/config.json` 中设置 `"debug": true`，查看 `.memory/logs/capture.log`、`.memory/logs/flush.log`、`.memory/logs/consolidate.log`。
 
 ---
 
