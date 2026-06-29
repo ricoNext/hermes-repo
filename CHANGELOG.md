@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.2.3
+
+### Patch Changes
+
+- 17d33f3: 增加 flush 调用 LLM 时的详细 debug 日志，便于检查请求输入、原始响应和标准化后的知识文件结果。
+
 ## 1.2.2
 
 ### Patch Changes
