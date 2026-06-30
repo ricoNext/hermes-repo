@@ -44,8 +44,9 @@ Interactive `init` asks for:
 - target repository directory
 - assistants to wire up
 - whether to copy example capture templates
+- whether to configure an OpenAI-compatible LLM now
 
-It does not ask for LLM credentials. Configure those manually in `.memory/config.json` if you want `flush` or `capture-llm` to use an LLM.
+If you configure LLM during init, hermes-repo writes the settings to `.memory/config.json` and the final summary confirms whether `flush` is ready. If LLM is incomplete, `capture` and `inject` still work, but `flush` / `autoFlush` cannot consolidate memory yet.
 
 Non-interactive setup:
 
@@ -147,7 +148,8 @@ Important details:
 - `baseUrl` is the service root; hermes-repo calls `{baseUrl}/chat/completions`.
 - Native Anthropic or Gemini endpoints are not supported directly. Use a gateway that exposes an OpenAI-compatible endpoint.
 - `.memory/config.json` is gitignored because it may contain `apiKey`.
-- `consolidate.autoFlush.enabled` is on by default for new projects. It can trigger background `flush` after capture thresholds are met, but it still needs LLM config.
+- `consolidate.autoFlush.enabled` is on by default for new projects. With complete LLM config, captures can automatically trigger background `flush` after thresholds are met.
+- If you turn `autoFlush` off, run `npx @riconext/hermes-repo flush` manually after captures accumulate.
 
 Process queued capture upgrades manually:
 

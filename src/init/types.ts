@@ -1,4 +1,5 @@
 import type { AssistantId } from "./assistants/types.js";
+import type { LlmConfigV2 } from "../config/types.js";
 
 export interface InitCliOptions {
   yes?: boolean;
@@ -16,6 +17,7 @@ export interface InitResolvedOptions {
   force: boolean;
   includeExampleTemplates: boolean;
   assistants: AssistantId[];
+  llm?: Partial<LlmConfigV2>;
   cancelled: boolean;
 }
 

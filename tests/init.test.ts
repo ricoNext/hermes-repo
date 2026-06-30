@@ -141,6 +141,48 @@ describe("init", () => {
     expect(stdout).toMatch(/llm: not ready/);
     expect(stdout).toMatch(/autoFlush: on/);
     expect(stdout).toMatch(/apiKey=missing/);
+    expect(stdout).toMatch(/目前无法使用 flush \/ autoFlush/);
+  });
+
+  it("prints ready LLM summary when config is complete", () => {
+    const dir = makeTempDir();
+    mkdirSync(join(dir, ".memory"), { recursive: true });
+    writeFileSync(
+      join(dir, ".memory", "config.json"),
+      `${JSON.stringify({
+        version: 2,
+        storage: { backend: "file" },
+        assistants: ["claude-code"],
+        debug: false,
+        llm: {
+          enabled: true,
+          provider: "openai",
+          baseUrl: "https://api.example",
+          model: "memory-model",
+          apiKey: "sk-test",
+          timeoutMs: 60000,
+          maxInputChars: 24000,
+          mode: "async",
+        },
+        consolidate: {
+          autoArchiveDays: 30,
+          autoFlush: {
+            enabled: true,
+            minPendingSessions: 3,
+            minIntervalMinutes: 30,
+            maxPendingChars: 20000,
+          },
+        },
+      })}\n`,
+      "utf8",
+    );
+
+    const { status, stdout } = runCliInDir(dir, ["init", "-y"]);
+
+    expect(status).toBe(0);
+    expect(stdout).toMatch(/llm: ready/);
+    expect(stdout).toMatch(/apiKey=set/);
+    expect(stdout).toMatch(/后续 capture 达到阈值后会自动执行 flush/);
   });
 
   it("init -y --tools unknown fails", () => {

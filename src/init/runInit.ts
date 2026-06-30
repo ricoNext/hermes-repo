@@ -143,8 +143,14 @@ function printConfigSummary(repoRoot: string): void {
     `  autoFlush: ${formatStatus(autoFlush.enabled)} ` +
       `(sessions>=${autoFlush.minPendingSessions}, chars>=${autoFlush.maxPendingChars}, interval>=${autoFlush.minIntervalMinutes}m)`,
   );
-  if (autoFlush.enabled && !llmReady) {
-    console.log("  note: autoFlush 已开启，但需要完整 LLM 配置后才会实际执行 flush");
+  if (llmReady) {
+    console.log(
+      autoFlush.enabled
+        ? "  LLM 配置完成：后续 capture 达到阈值后会自动执行 flush"
+        : "  LLM 配置完成：autoFlush 已关闭，如需自动整理请在 .memory/config.json 中开启 consolidate.autoFlush.enabled",
+    );
+  } else {
+    console.log("  LLM 配置不完整：目前无法使用 flush / autoFlush 整理记忆");
   }
   console.log("");
 }

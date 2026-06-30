@@ -53,8 +53,9 @@ function writeConfigJson(
   report: InitReport,
   repoRoot: string,
   assistants: AssistantId[],
+  llmOverride?: InitResolvedOptions["llm"],
 ): void {
-  const { content, action } = mergeConfigForInit(repoRoot, assistants);
+  const { content, action } = mergeConfigForInit(repoRoot, assistants, llmOverride);
   const absolutePath = memoryPath(repoRoot, "config.json");
   writeFileSync(absolutePath, content, "utf8");
   report.files.push({ path: ".memory/config.json", action });
@@ -83,7 +84,7 @@ export function writeScaffoldFiles(
 ): void {
   const { force, includeExampleTemplates, assistants } = opts;
 
-  writeConfigJson(report, repoRoot, assistants);
+  writeConfigJson(report, repoRoot, assistants, opts.llm);
 
   // v2: LLM settings live in config.json.
 

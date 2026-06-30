@@ -1,6 +1,13 @@
 import { checkbox, confirm, input } from "@inquirer/prompts";
 import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
+import {
+  DEFAULT_LLM_BASE_URL,
+  DEFAULT_LLM_MODEL,
+  DEFAULT_LLM_TIMEOUT_MS,
+  DEFAULT_LLM_MAX_INPUT_CHARS,
+} from "../config/llmConfig.js";
+import type { LlmConfigV2 } from "../config/types.js";
 import { listAvailable } from "./assistants/registry.js";
 import type { AssistantId } from "./assistants/types.js";
 import type { InitCliOptions, InitResolvedOptions } from "./types.js";
@@ -19,6 +26,81 @@ function isInitialized(targetDir: string): boolean {
   } catch {
     return false;
   }
+}
+
+function readExistingLlmConfig(targetDir: string): Partial<LlmConfigV2> {
+  const configPath = memoryPath(targetDir, "config.json");
+  if (!existsSync(configPath)) {
+    return {};
+  }
+  try {
+    const config = JSON.parse(readFileSync(configPath, "utf8")) as {
+      llm?: Partial<LlmConfigV2>;
+    };
+    return config.llm && typeof config.llm === "object" ? config.llm : {};
+  } catch {
+    return {};
+  }
+}
+
+async function gatherLlmOptions(
+  targetDir: string,
+): Promise<Partial<LlmConfigV2> | undefined> {
+  const existing = readExistingLlmConfig(targetDir);
+  const existingKey = typeof existing.apiKey === "string" ? existing.apiKey : "";
+  const configure = await confirm({
+    message: existingKey
+      ? "检测到已有 LLM API key，是否更新 LLM 配置？"
+      : "是否现在配置 LLM？配置后 flush / autoFlush 才能整理记忆",
+    default: !existingKey,
+  });
+
+  if (!configure) {
+    return undefined;
+  }
+
+  const baseUrl = await input({
+    message: "LLM baseUrl（OpenAI 兼容服务根地址）",
+    default:
+      typeof existing.baseUrl === "string" && existing.baseUrl.trim()
+        ? existing.baseUrl
+        : DEFAULT_LLM_BASE_URL,
+  });
+
+  const model = await input({
+    message: "LLM model",
+    default:
+      typeof existing.model === "string" && existing.model.trim()
+        ? existing.model
+        : DEFAULT_LLM_MODEL,
+  });
+
+  const apiKey = await input({
+    message: existingKey
+      ? "LLM apiKey（留空则保留现有 key）"
+      : "LLM apiKey",
+    default: "",
+  });
+
+  return {
+    enabled: true,
+    provider:
+      typeof existing.provider === "string" && existing.provider.trim()
+        ? existing.provider
+        : "openai",
+    baseUrl: baseUrl.trim(),
+    model: model.trim(),
+    apiKey: apiKey.trim() || existingKey,
+    timeoutMs:
+      typeof existing.timeoutMs === "number" && existing.timeoutMs > 0
+        ? existing.timeoutMs
+        : DEFAULT_LLM_TIMEOUT_MS,
+    maxInputChars:
+      typeof existing.maxInputChars === "number" && existing.maxInputChars > 0
+        ? existing.maxInputChars
+        : DEFAULT_LLM_MAX_INPUT_CHARS,
+    mode: existing.mode === "sync" ? "sync" : "async",
+  };
 }
 
 export async function gatherInitOptions(
@@ -47,6 +129,8 @@ export async function gatherInitOptions(
     default: true,
   });
 
+  const llm = await gatherLlmOptions(targetDir);
+
   if (isInitialized(targetDir)) {
     const continueInit = await confirm({
       message: "检测到已有 .memory/config.json，是否仅补全缺失项？",
@@ -58,6 +142,7 @@ export async function gatherInitOptions(
         force: false,
         includeExampleTemplates,
         assistants,
+        llm,
         cancelled: true,
       };
     }
@@ -68,6 +153,7 @@ export async function gatherInitOptions(
     force: Boolean(opts.force),
     includeExampleTemplates,
     assistants,
+    llm,
     cancelled: false,
   };
 }

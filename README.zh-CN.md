@@ -44,8 +44,9 @@ npx @riconext/hermes-repo init
 - 目标仓库目录
 - 要接入哪些助手
 - 是否复制示例 capture 模板
+- 是否现在配置 OpenAI 兼容 LLM
 
-它不会询问 LLM 密钥。如果要使用 `flush` 或 `capture-llm`，需要手动编辑 `.memory/config.json`。
+如果在 init 阶段配置 LLM，hermes-repo 会写入 `.memory/config.json`，并在结束摘要中确认 `flush` 是否可用。LLM 不完整时，`capture` 和 `inject` 仍可用，但 `flush` / `autoFlush` 暂时无法整理记忆。
 
 非交互初始化：
 
@@ -147,7 +148,8 @@ hermes-repo 使用 OpenAI 兼容的 Chat Completions 接口：
 - `baseUrl` 是服务根地址；hermes-repo 会请求 `{baseUrl}/chat/completions`。
 - 不直接支持 Anthropic 或 Gemini 原生接口。需要通过 OpenAI 兼容网关使用。
 - `.memory/config.json` 可能包含 `apiKey`，默认会被 gitignore。
-- 新项目默认开启 `consolidate.autoFlush.enabled`。它可以在 capture 达到阈值后后台触发 `flush`，但同样需要 LLM 配置。
+- 新项目默认开启 `consolidate.autoFlush.enabled`。LLM 配置完整后，capture 达到阈值时可以后台自动触发 `flush`。
+- 如果关闭 `autoFlush`，需要在积累 capture 后手动运行 `npx @riconext/hermes-repo flush`。
 
 手动处理排队的捕获升级：
 

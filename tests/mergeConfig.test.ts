@@ -134,4 +134,32 @@ describe("mergeConfigForInit", () => {
       maxPendingChars: 20_000,
     });
   });
+
+  it("applies llm override from interactive init", () => {
+    const root = mkdtempSync(join(tmpdir(), "hermes-merge-cfg-"));
+    tempDirs.push(root);
+    mkdirSync(join(root, ".memory"), { recursive: true });
+
+    const { content } = mergeConfigForInit(root, ["claude-code"], {
+      enabled: true,
+      baseUrl: "https://llm.example",
+      model: "memory-model",
+      apiKey: "sk-live",
+    });
+    const config = JSON.parse(content) as {
+      llm: {
+        enabled: boolean;
+        baseUrl: string;
+        model: string;
+        apiKey: string;
+      };
+    };
+
+    expect(config.llm).toMatchObject({
+      enabled: true,
+      baseUrl: "https://llm.example",
+      model: "memory-model",
+      apiKey: "sk-live",
+    });
+  });
 });

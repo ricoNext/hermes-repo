@@ -2,6 +2,7 @@ import { existsSync, readFileSync } from "node:fs";
 import type { AssistantId } from "./assistants/types.js";
 import type { InitFileAction } from "./types.js";
 import { memoryPath } from "./paths.js";
+import type { LlmConfigV2 } from "../config/types.js";
 import {
   DEFAULT_LLM_BASE_URL,
   DEFAULT_LLM_MODEL,
@@ -34,6 +35,7 @@ const DEFAULT_CONSOLIDATE = {
 export function mergeConfigForInit(
   repoRoot: string,
   assistants: AssistantId[],
+  llmOverride?: Partial<LlmConfigV2>,
 ): { content: string; action: InitFileAction } {
   const configPath = memoryPath(repoRoot, "config.json");
   const existed = existsSync(configPath);
@@ -82,7 +84,7 @@ export function mergeConfigForInit(
     },
     assistants,
     debug: existing.debug === true,
-    llm: { ...DEFAULT_LLM, ...prevLlm },
+    llm: { ...DEFAULT_LLM, ...prevLlm, ...(llmOverride ?? {}) },
     consolidate: {
       ...DEFAULT_CONSOLIDATE,
       ...prevConsolidate,
