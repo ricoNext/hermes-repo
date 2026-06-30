@@ -4,6 +4,18 @@
 
 npm：`@riconext/hermes-repo` · 灵感来自 [Hermes Agent](https://github.com/NousResearch/hermes) 的记忆与技能闭环 · [English](README.md)
 
+```text
+ _                                               
+| |__   ___ _ __ _ __ ___   ___  ___        _ __ ___ _ __   ___
+| '_ \ / _ \ '__| '_ ' _ \ / _ \/ __|      | '__/ _ \ '_ \ / _ \
+| | | |  __/ |  | | | | | |  __/\__ \      | | |  __/ |_) | (_) |
+|_| |_|\___|_|  |_| |_| |_|\___||___/      |_|  \___| .__/ \___/
+                                                    |_|          
+
+repo-local memory for AI coding assistants
+capture -> consolidate -> inject
+```
+
 ![](https://neptune-ipc.oss-cn-shenzhen.aliyuncs.com/img/20260521182425723.png)
 
 ## 功能概览

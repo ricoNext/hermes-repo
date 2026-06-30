@@ -4,6 +4,18 @@
 
 npm: `@riconext/hermes-repo` · Inspired by [Hermes Agent](https://github.com/NousResearch/hermes) memory & skill loop · [中文](README.zh-CN.md)
 
+```text
+ _                                               
+| |__   ___ _ __ _ __ ___   ___  ___        _ __ ___ _ __   ___
+| '_ \ / _ \ '__| '_ ' _ \ / _ \/ __|      | '__/ _ \ '_ \ / _ \
+| | | |  __/ |  | | | | | |  __/\__ \      | | |  __/ |_) | (_) |
+|_| |_|\___|_|  |_| |_| |_|\___||___/      |_|  \___| .__/ \___/
+                                                    |_|          
+
+repo-local memory for AI coding assistants
+capture -> consolidate -> inject
+```
+
 ![](https://neptune-ipc.oss-cn-shenzhen.aliyuncs.com/img/20260521182425723.png)
 
 ## Features
