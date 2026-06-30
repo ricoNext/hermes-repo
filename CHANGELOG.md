@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.2.6
+
+### Patch Changes
+
+- 7c3a3c4: Improve init onboarding with a project banner, configuration summary, default autoFlush enablement, refreshed documentation, and Codex hook wiring.
+
 ## 1.2.5
 
 ### Patch Changes
