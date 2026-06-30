@@ -1,0 +1,21 @@
+{
+  "name": "@riconext/hermes-mcp-server",
+  "version": "0.0.0",
+  "private": true,
+  "description": "团队记忆 MCP 服务器（FastMCP + PostgreSQL + pgvector）",
+  "type": "module",
+  "license": "MIT",
+  "scripts": {
+    "build": "tsup src/index.ts --format esm --dts --clean",
+    "dev": "tsup src/index.ts --format esm --watch",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@types/node": "^22.15.29",
+    "tsup": "^8.5.0",
+    "typescript": "^5.8.3"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

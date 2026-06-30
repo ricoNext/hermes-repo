@@ -1,0 +1,15 @@
+{
+  "name": "@riconext/hermes-ui",
+  "version": "0.0.0",
+  "private": true,
+  "description": "团队记忆管理 UI 平台（Next.js + Shadcn/ui）",
+  "license": "MIT",
+  "scripts": {
+    "build": "node -e \"console.log('@riconext/hermes-ui: build not implemented yet')\"",
+    "dev": "node -e \"console.log('@riconext/hermes-ui: dev not implemented yet')\"",
+    "typecheck": "node -e \"console.log('@riconext/hermes-ui: typecheck not implemented yet')\""
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

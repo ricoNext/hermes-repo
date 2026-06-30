@@ -4,17 +4,39 @@
   "workspaces": {
     "": {
       "name": "@riconext/hermes-repo",
+      "devDependencies": {
+        "@changesets/cli": "^2.31.0",
+      },
+    },
+    "packages/cli": {
+      "name": "@riconext/hermes-repo",
+      "version": "1.2.8",
+      "bin": {
+        "hermes-repo": "./dist/cli.js",
+      },
       "dependencies": {
         "@inquirer/prompts": "^7.5.1",
         "commander": "^13.1.0",
       },
       "devDependencies": {
-        "@changesets/cli": "^2.31.0",
         "@types/node": "^22.15.29",
         "tsup": "^8.5.0",
         "typescript": "^5.8.3",
         "vitest": "^3.2.4",
       },
+    },
+    "packages/mcp-server": {
+      "name": "@riconext/hermes-mcp-server",
+      "version": "0.0.0",
+      "devDependencies": {
+        "@types/node": "^22.15.29",
+        "tsup": "^8.5.0",
+        "typescript": "^5.8.3",
+      },
+    },
+    "packages/ui": {
+      "name": "@riconext/hermes-ui",
+      "version": "0.0.0",
     },
   },
   "packages": {
@@ -155,6 +177,12 @@
     "@nodelib/fs.stat": ["@nodelib/fs.stat@2.0.5", "", {}, "sha512-RkhPPp2zrqDAQA/2jNhnztcPAlv64XdhIp7a7454A5ovI7Bukxgt7MX7udwAu3zg1DcpPU0rz3VV1SeaqvY4+A=="],
 
     "@nodelib/fs.walk": ["@nodelib/fs.walk@1.2.8", "", { "dependencies": { "@nodelib/fs.scandir": "2.1.5", "fastq": "^1.6.0" } }, "sha512-oGB+UxlgWcgQkgwo8GcEGwemoTFt3FIO9ababBmaGwXIoBKZ+GTy0pP185beGg7Llih/NSHSV2XAs1lnznocSg=="],
+
+    "@riconext/hermes-mcp-server": ["@riconext/hermes-mcp-server@workspace:packages/mcp-server"],
+
+    "@riconext/hermes-repo": ["@riconext/hermes-repo@workspace:packages/cli"],
+
+    "@riconext/hermes-ui": ["@riconext/hermes-ui@workspace:packages/ui"],
 
     "@rollup/rollup-android-arm-eabi": ["@rollup/rollup-android-arm-eabi@4.60.4", "", { "os": "android", "cpu": "arm" }, "sha512-F5QXMSiFebS9hKZj02XhWLLnRpJ3B3AROP0tWbFBSj+6kCbg5m9j5JoHKd4mmSVy5mS/IMQloYgYxCuJC0fxEQ=="],
 

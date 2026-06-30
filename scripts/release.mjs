@@ -31,7 +31,7 @@ function currentBranch() {
 }
 
 function packageVersion() {
-  const pkg = JSON.parse(readFileSync("package.json", "utf8"));
+  const pkg = JSON.parse(readFileSync("packages/cli/package.json", "utf8"));
   if (!pkg.version || typeof pkg.version !== "string") {
     throw new Error("package.json version is missing");
   }
@@ -64,7 +64,7 @@ function main() {
     throw new Error(`Tag already exists: ${tag}`);
   }
 
-  git(["add", "package.json", "bun.lock", "CHANGELOG.md", ".changeset"]);
+  git(["add", "packages/cli/package.json", "bun.lock", "packages/cli/CHANGELOG.md", ".changeset"]);
   git(["commit", "-m", `chore: release ${version}`]);
   git(["tag", tag]);
   git(["push", "origin", branch]);

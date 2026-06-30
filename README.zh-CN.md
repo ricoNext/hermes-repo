@@ -4,6 +4,8 @@
 
 npm：`@riconext/hermes-repo` · 灵感来自 [Hermes Agent](https://github.com/NousResearch/hermes) 的记忆与技能闭环 · [English](README.md)
 
+> **Monorepo**：`packages/cli`（CLI，已发布 npm）、`packages/mcp-server`（MCP 服务，规划中）、`packages/ui`（管理界面，规划中）。详见 [packages/README.md](packages/README.md)。
+
 ```text
  _                                               
 | |__   ___ _ __ _ __ ___   ___  ___        _ __ ___ _ __   ___
