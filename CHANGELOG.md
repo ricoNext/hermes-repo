@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.2.7
+
+### Patch Changes
+
+- e2abf81: Add interactive LLM configuration during init, with clearer readiness summary and updated documentation.
+
 ## 1.2.6
 
 ### Patch Changes
