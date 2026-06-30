@@ -12,8 +12,7 @@ function buildCodexHermesBlock(): string {
   return [
     CODEX_HERMES_START_MARKER,
     "# Hermes uses AGENTS.md as the shared Codex project guidance entry.",
-    "# Run `npx @riconext/hermes-repo search <keyword>` to inspect project memory.",
-    "# Run `npx @riconext/hermes-repo ref --capture <path> --reason \"...\"` after using memory.",
+    "# See AGENTS.md for memory workflow and available hermes-repo commands.",
     CODEX_HERMES_END_MARKER,
   ].join("\n");
 }

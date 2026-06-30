@@ -6,20 +6,17 @@ npm: `@riconext/hermes-repo` · Inspired by [Hermes Agent](https://github.com/No
 
 ![](https://neptune-ipc.oss-cn-shenzhen.aliyuncs.com/img/20260521182425723.png)
 
-## What Works Today
+## Features
 
-hermes-repo currently provides a single-repo memory loop:
-
-| Capability | Current behavior |
-|------------|------------------|
+| Capability | Behavior |
+|------------|----------|
 | Assistant setup | `init` creates `.memory/`, merges `AGENTS.md`, and writes hook config for selected assistants |
-| Session capture | Stop hooks write session summaries into `.memory/captures/raw/session-*.md` |
+| Session capture | Stop hooks append session summaries to `.memory/captures/raw/session-*.md` |
 | Session injection | SessionStart hooks print `.memory/MEMORY.md` plus all `.memory/rules/*.md` content |
-| LLM capture upgrade | `capture-llm --flush` processes queued capture upgrade jobs when LLM is configured |
+| LLM capture upgrade | When LLM is configured, `capture-llm --flush` processes queued per-session upgrade jobs |
 | Consolidation | `flush` uses an OpenAI-compatible LLM to turn raw captures into knowledge files and `MEMORY.md` |
-| Multi-assistant support | Claude Code, Cursor, CodeBuddy, and OpenAI Codex adapters are available |
-
-Not currently exposed as CLI commands: `search`, `stats`, `ref`, `promote`, and `init --scan`. Some older design docs may mention them as planned or historical workflow ideas; the README describes the shipped CLI.
+| Auto flush | With complete LLM config, capture can trigger background `flush` when thresholds are met |
+| Multi-assistant support | Claude Code, Cursor, CodeBuddy, and OpenAI Codex adapters |
 
 ## Why
 
@@ -27,9 +24,23 @@ AI coding sessions repeatedly lose local project context:
 
 - Conventions like package manager, naming style, or API shape get restated in every new chat.
 - A bug explanation from last week stays buried in transcript history.
-- Team knowledge drifts because assistant context is not versioned with the repository.
 
-hermes-repo keeps the working memory inside the repo. Raw captures stay local by default, while consolidated knowledge files can be reviewed and committed like other project documentation.
+hermes-repo keeps working memory inside the repo: hooks capture sessions, LLM consolidates them into structured knowledge, and future sessions inject that knowledge automatically.
+
+## Why LLM Is Required
+
+hermes-repo has two stages:
+
+| Stage | Commands | LLM required? |
+|-------|----------|---------------|
+| Capture & inject | `capture`, `inject` | No |
+| Consolidate | `flush`, `capture-llm`, `autoFlush` | Yes |
+
+`capture` only appends session transcripts to `.memory/captures/raw/`. That is raw evidence, not usable project memory.
+
+`inject` loads `MEMORY.md` and `rules/*.md`. Those files are created or updated by `flush`, which calls an OpenAI-compatible LLM to classify content, write knowledge files, and regenerate the navigation summary.
+
+Without LLM configuration, the hooks still run, but memory never gets consolidated. Configure LLM during interactive `init`, or edit `.memory/config.json` afterward, to make the memory loop work.
 
 ## Five-Minute Start
 
@@ -43,7 +54,7 @@ Interactive `init` asks for:
 
 - target repository directory
 - assistants to wire up
-- whether to copy example capture templates
+- whether to write the capture example template to `.memory/templates/`
 - whether to configure an OpenAI-compatible LLM now
 
 If you configure LLM during init, hermes-repo writes the settings to `.memory/config.json` and the final summary confirms whether `flush` is ready. If LLM is incomplete, `capture` and `inject` still work, but `flush` / `autoFlush` cannot consolidate memory yet.
@@ -55,11 +66,13 @@ npx @riconext/hermes-repo init -y --tools claude-code
 npx @riconext/hermes-repo init -y --tools claude-code,cursor,codebuddy,codex
 ```
 
+`-y` skips the LLM prompt. Edit `.memory/config.json` manually afterward if you need `flush` or `autoFlush`.
+
 Then use your assistant normally:
 
 1. At session start, the hook runs `inject`.
 2. At session end, the hook runs `capture`.
-3. When raw captures have accumulated and LLM is configured, run:
+3. When raw captures accumulate and LLM is configured, either wait for `autoFlush` or run manually:
 
 ```bash
 npx @riconext/hermes-repo flush
@@ -95,6 +108,7 @@ Runtime:
     resolves the current assistant transcript
     appends a section to captures/raw/session-{id}.md
     optionally queues a background LLM upgrade job
+    may schedule background flush when autoFlush thresholds are met
 
   Manual -> hermes-repo flush
     requires configured LLM
@@ -107,15 +121,13 @@ Runtime:
 
 | Layer | Paths | Git behavior | Purpose |
 |-------|-------|--------------|---------|
-| Local / personal | `.memory/config.json`, `.memory/captures/`, `.memory/consolidate-state.json`, `.memory/.consolidate.lock` | ignored by the init gitignore block | secrets, transcripts, local processing state |
-| Shared knowledge | `.memory/MEMORY.md`, `.memory/rules/`, `.memory/domains/`, `.memory/workflows/`, `.memory/decisions/`, `.memory/incidents/` | re-included by the init gitignore block | reviewed project knowledge for future sessions |
-| Assistant guidance | `AGENTS.md`, selected assistant config files | normal repo files unless your own gitignore excludes them | tells assistants how to use memory |
-
-Team collaboration today is the normal Git workflow: inspect generated knowledge files, edit if needed, and submit them in a PR. There is no `promote` CLI in the current version.
+| Local | `.memory/config.json`, `.memory/captures/`, `.memory/consolidate-state.json`, `.memory/.consolidate.lock` | ignored by the init gitignore block | secrets, transcripts, processing state |
+| Knowledge | `.memory/MEMORY.md`, `.memory/rules/`, `.memory/domains/`, `.memory/workflows/`, `.memory/decisions/`, `.memory/incidents/` | tracked unless your gitignore excludes them | structured memory injected into future sessions |
+| Assistant guidance | `AGENTS.md`, selected assistant config files | normal repo files | tells assistants how to use memory |
 
 ## LLM Configuration
 
-`capture` and `inject` work without LLM. `flush` and successful `capture-llm` upgrades require LLM config.
+Configure LLM to enable consolidation. `flush`, `capture-llm`, and `autoFlush` all depend on it.
 
 hermes-repo uses an OpenAI-compatible Chat Completions endpoint:
 
@@ -125,7 +137,7 @@ hermes-repo uses an OpenAI-compatible Chat Completions endpoint:
     "enabled": true,
     "provider": "openai",
     "baseUrl": "https://api.deepseek.com",
-    "model": "deepseek-chat",
+    "model": "deepseek-v4-flash",
     "apiKey": "your-key",
     "timeoutMs": 60000,
     "maxInputChars": 24000,
@@ -259,6 +271,8 @@ node dist/cli.js --help
 
 ## Development
 
+Requires Node.js >= 20.
+
 ```bash
 bun install
 bun run build
@@ -266,16 +280,12 @@ bun run test
 bun run typecheck
 ```
 
-Release helpers:
+Release:
 
 ```bash
 bun run changeset
 bun run release
 ```
-
-## Roadmap
-
-Planned areas include memory search, stats, explicit feedback/reference tracking, reviewed promotion workflows, cold-start scanning, and MCP-based retrieval. These are not current CLI capabilities unless implemented in a future release.
 
 ## License
 

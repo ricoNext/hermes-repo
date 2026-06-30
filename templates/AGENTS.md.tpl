@@ -84,7 +84,7 @@ npx @riconext/hermes-repo flush
   "llm": {
     "enabled": true,
     "baseUrl": "https://api.deepseek.com",
-    "model": "deepseek-chat",
+    "model": "deepseek-v4-flash",
     "apiKey": "sk-..."
   },
   "consolidate": {
@@ -133,4 +133,4 @@ consolidate 时 LLM 会将内容分为 5 类：
 
 - 不要写入代码的具体实现细节（代码本身是自文档的）
 - 不要写入敏感信息（密钥、密码、个人数据）
-- 不要重复写入已存在的内容（先搜索再写）
+- 不要重复写入已存在的内容（写入前先检查 `.memory/` 下是否已有同类知识）

@@ -6,20 +6,17 @@ npm：`@riconext/hermes-repo` · 灵感来自 [Hermes Agent](https://github.com/
 
 ![](https://neptune-ipc.oss-cn-shenzhen.aliyuncs.com/img/20260521182425723.png)
 
-## 当前真实能力
+## 功能概览
 
-hermes-repo 目前提供单仓库记忆闭环：
-
-| 能力 | 当前行为 |
-|------|----------|
-| 助手接入 | `init` 创建 `.memory/`，合并 `AGENTS.md`，并为选择的助手写入 hook 配置 |
-| 会话捕获 | Stop hook 把会话摘要写入 `.memory/captures/raw/session-*.md` |
-| 会话注入 | SessionStart hook 输出 `.memory/MEMORY.md` 和 `.memory/rules/*.md` 全文 |
-| LLM 捕获升级 | 配好 LLM 后，`capture-llm --flush` 处理排队的捕获升级任务 |
+| 能力 | 行为 |
+|------|------|
+| 助手接入 | `init` 创建 `.memory/`、合并 `AGENTS.md`，并为所选助手写入 hook 配置 |
+| 会话捕获 | Stop hook 将会话摘要追加到 `.memory/captures/raw/session-*.md` |
+| 会话注入 | SessionStart hook 输出 `.memory/MEMORY.md` 与 `.memory/rules/*.md` 全文 |
+| LLM 捕获升级 | 配好 LLM 后，`capture-llm --flush` 处理排队的单会话升级任务 |
 | 知识整理 | `flush` 调用 OpenAI 兼容 LLM，把原始捕获整理成知识文件并更新 `MEMORY.md` |
-| 多助手支持 | 已有 Claude Code、Cursor、CodeBuddy、OpenAI Codex 适配器 |
-
-当前没有暴露为 CLI 的命令：`search`、`stats`、`ref`、`promote`、`init --scan`。部分旧设计文档可能提到这些规划或历史工作流；README 以当前已发布 CLI 为准。
+| 自动整理 | LLM 配置完整时，capture 达到阈值可后台自动触发 `flush` |
+| 多助手支持 | 支持 Claude Code、Cursor、CodeBuddy、OpenAI Codex |
 
 ## 为什么需要
 
@@ -27,9 +24,23 @@ AI 编程会话经常丢失本地项目上下文：
 
 - 每个新会话都要重新说明包管理器、命名风格、API 形态。
 - 上周解释过的 bug 根因，后来还得在聊天记录里翻。
-- 团队知识没有跟仓库一起版本化，助手上下文容易漂移。
 
-hermes-repo 把工作记忆留在 repo 里。原始捕获默认留在本地；整理后的知识文件可以像普通项目文档一样 review、修改、提交。
+hermes-repo 把项目记忆留在 repo 里：hook 捕获会话，LLM 整理成结构化知识，后续会话自动注入。
+
+## 为什么需要 LLM
+
+hermes-repo 分两个阶段：
+
+| 阶段 | 命令 | 是否需要 LLM |
+|------|------|--------------|
+| 捕获与注入 | `capture`、`inject` | 否 |
+| 整理 | `flush`、`capture-llm`、`autoFlush` | 是 |
+
+`capture` 只会把会话 transcript 追加到 `.memory/captures/raw/`，这是原始记录，还不是可用的项目记忆。
+
+`inject` 加载的是 `MEMORY.md` 和 `rules/*.md`。这些文件由 `flush` 生成或更新——`flush` 会调用 OpenAI 兼容 LLM，完成分类、写入知识文件、重新生成导航摘要。
+
+没有 LLM 配置时，hook 仍会运行，但记忆不会被整理。请在交互式 `init` 中配置 LLM，或之后编辑 `.memory/config.json`，记忆闭环才能正常工作。
 
 ## 五分钟上手
 
@@ -43,7 +54,7 @@ npx @riconext/hermes-repo init
 
 - 目标仓库目录
 - 要接入哪些助手
-- 是否复制示例 capture 模板
+- 是否写入 capture 示例模板到 `.memory/templates/`
 - 是否现在配置 OpenAI 兼容 LLM
 
 如果在 init 阶段配置 LLM，hermes-repo 会写入 `.memory/config.json`，并在结束摘要中确认 `flush` 是否可用。LLM 不完整时，`capture` 和 `inject` 仍可用，但 `flush` / `autoFlush` 暂时无法整理记忆。
@@ -55,11 +66,13 @@ npx @riconext/hermes-repo init -y --tools claude-code
 npx @riconext/hermes-repo init -y --tools claude-code,cursor,codebuddy,codex
 ```
 
+`-y` 会跳过 LLM 配置询问。如需使用 `flush` 或 `autoFlush`，请之后手动编辑 `.memory/config.json`。
+
 之后正常使用助手：
 
 1. 会话开始时，hook 运行 `inject`。
 2. 会话结束时，hook 运行 `capture`。
-3. 积累了原始捕获且已配置 LLM 后，手动整理：
+3. 积累了原始捕获且已配置 LLM 后，可等待 `autoFlush` 自动整理，或手动执行：
 
 ```bash
 npx @riconext/hermes-repo flush
@@ -95,6 +108,7 @@ npx @riconext/hermes-repo flush
     解析当前助手 transcript
     追加到 captures/raw/session-{id}.md
     可选：排队后台 LLM 升级任务
+    满足阈值时可能调度后台 flush（autoFlush）
 
   手动 -> hermes-repo flush
     需要已配置 LLM
@@ -107,15 +121,13 @@ npx @riconext/hermes-repo flush
 
 | 层级 | 路径 | Git 行为 | 用途 |
 |------|------|----------|------|
-| 本地/个人 | `.memory/config.json`、`.memory/captures/`、`.memory/consolidate-state.json`、`.memory/.consolidate.lock` | init 写入的 gitignore 块会忽略 | 密钥、会话记录、本地处理状态 |
-| 共享知识 | `.memory/MEMORY.md`、`.memory/rules/`、`.memory/domains/`、`.memory/workflows/`、`.memory/decisions/`、`.memory/incidents/` | init 写入的 gitignore 块会重新放行 | 给后续会话使用的项目知识 |
-| 助手引导 | `AGENTS.md`、已选择助手的配置文件 | 除非你自己的 gitignore 排除，否则按普通仓库文件处理 | 告诉助手如何使用记忆 |
-
-当前的团队协作方式就是普通 Git 流程：检查生成的知识文件，必要时手动编辑，然后通过 PR 提交。当前版本没有 `promote` CLI。
+| 本地 | `.memory/config.json`、`.memory/captures/`、`.memory/consolidate-state.json`、`.memory/.consolidate.lock` | init 写入的 gitignore 块会忽略 | 密钥、会话记录、处理状态 |
+| 知识库 | `.memory/MEMORY.md`、`.memory/rules/`、`.memory/domains/`、`.memory/workflows/`、`.memory/decisions/`、`.memory/incidents/` | 默认纳入版本控制（除非你自行 gitignore） | 注入到后续会话的结构化记忆 |
+| 助手引导 | `AGENTS.md`、已选择助手的配置文件 | 普通仓库文件 | 告诉助手如何使用记忆 |
 
 ## LLM 配置
 
-`capture` 和 `inject` 不依赖 LLM。`flush` 和成功的 `capture-llm` 升级需要 LLM 配置。
+配置 LLM 后才能启用整理能力。`flush`、`capture-llm`、`autoFlush` 都依赖 LLM。
 
 hermes-repo 使用 OpenAI 兼容的 Chat Completions 接口：
 
@@ -125,7 +137,7 @@ hermes-repo 使用 OpenAI 兼容的 Chat Completions 接口：
     "enabled": true,
     "provider": "openai",
     "baseUrl": "https://api.deepseek.com",
-    "model": "deepseek-chat",
+    "model": "deepseek-v4-flash",
     "apiKey": "你的密钥",
     "timeoutMs": 60000,
     "maxInputChars": 24000,
@@ -259,6 +271,8 @@ node dist/cli.js --help
 
 ## 开发
 
+需要 Node.js >= 20。
+
 ```bash
 bun install
 bun run build
@@ -266,16 +280,12 @@ bun run test
 bun run typecheck
 ```
 
-发布辅助命令：
+发布：
 
 ```bash
 bun run changeset
 bun run release
 ```
-
-## 路线图
-
-规划中的方向包括记忆搜索、统计、显式反馈/引用记录、带评审的晋升工作流、冷启动扫描，以及基于 MCP 的检索。这些不是当前 CLI 能力，除非未来版本实现。
 
 ## License
 

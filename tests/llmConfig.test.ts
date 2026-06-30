@@ -45,7 +45,7 @@ describe("llm config", () => {
       isLlmAvailable({
         enabled: true,
         baseUrl: "https://api.deepseek.com",
-        model: "deepseek-chat",
+        model: "deepseek-v4-flash",
         apiKey: "sk-test",
         timeoutMs: 60000,
         maxInputChars: 24000,
@@ -70,7 +70,7 @@ describe("llm config", () => {
     };
     expect(parsed.llm.enabled).toBe(false);
     expect(parsed.llm.baseUrl).toBe("https://api.deepseek.com");
-    expect(parsed.llm.model).toBe("deepseek-chat");
+    expect(parsed.llm.model).toBe("deepseek-v4-flash");
     expect(parsed.llm.apiKey).toBe("");
     expect(parsed.llm.timeoutMs).toBe(60_000);
     expect(parsed.llm.maxInputChars).toBe(24_000);
