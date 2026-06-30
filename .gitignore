@@ -145,7 +145,9 @@ vite.config.ts.timestamp-*
 # hermes-repo project memory (local)
 .memory/
 
+# Local IDE / planning docs (not pushed to remote)
 .cursor/
+docs/
 .claude/
 .agents/
 .codebuddy/
