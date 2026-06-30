@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.2.8
+
+### Patch Changes
+
+- 13806c7: Update README with LLM requirements, set default model to deepseek-v4-flash, and remove outdated CLI references in init templates.
+
 ## 1.2.7
 
 ### Patch Changes
