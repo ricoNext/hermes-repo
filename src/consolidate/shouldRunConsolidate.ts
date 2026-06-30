@@ -1,6 +1,6 @@
 /**
  * v2: shouldRunConsolidate 保留为兼容接口，但不再使用。
- * v2 采用懒 consolidate 策略（手动 flush），不自动调度。
+ * 自动调度逻辑已迁移到 scheduleConsolidate.ts 的 autoFlush 配置。
  * 保留此文件避免其他潜在引用编译失败。
  */
 
@@ -18,7 +18,7 @@ export interface ShouldConsolidateResult {
   deferredPendingLlm?: boolean;
 }
 
-/** v2: 始终返回 false（自动调度已禁用） */
+/** v2: 兼容旧入口；非 manual/force 调度由 maybeScheduleConsolidate 处理。 */
 export function shouldRunConsolidate(
   input: ShouldConsolidateInput,
 ): ShouldConsolidateResult {

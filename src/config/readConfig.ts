@@ -2,6 +2,13 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import type { AssistantId } from "../init/assistants/types.js";
 import { findRepoRoot } from "./findRepoRoot.js";
+import {
+  DEFAULT_LLM_BASE_URL,
+  DEFAULT_LLM_MODEL,
+  DEFAULT_LLM_TIMEOUT_MS,
+  DEFAULT_LLM_MAX_INPUT_CHARS,
+  defaultDisabledLlmConfig,
+} from "./llmConfig.js";
 import type {
   ConsolidateConfig,
   HermesConfig,
@@ -18,17 +25,17 @@ function parseLlmConfig(raw: Record<string, unknown>): LlmConfigV2 {
   return {
     enabled: typeof llm?.enabled === "boolean" ? llm.enabled : false,
     provider: typeof llm?.provider === "string" ? llm.provider : "openai",
-    baseUrl: typeof llm?.baseUrl === "string" ? llm.baseUrl : "https://api.openai.com/v1",
-    model: typeof llm?.model === "string" ? llm.model : "gpt-4o",
+    baseUrl: typeof llm?.baseUrl === "string" ? llm.baseUrl : DEFAULT_LLM_BASE_URL,
+    model: typeof llm?.model === "string" ? llm.model : DEFAULT_LLM_MODEL,
     apiKey: typeof llm?.apiKey === "string" ? llm.apiKey : "",
     timeoutMs:
       typeof llm?.timeoutMs === "number" && llm.timeoutMs > 0
         ? llm.timeoutMs
-        : 60_000,
+        : DEFAULT_LLM_TIMEOUT_MS,
     maxInputChars:
       typeof llm?.maxInputChars === "number" && llm.maxInputChars > 0
         ? llm.maxInputChars
-        : 24_000,
+        : DEFAULT_LLM_MAX_INPUT_CHARS,
     mode: llm?.mode === "sync" ? "sync" : "async",
   };
 }
@@ -42,7 +49,7 @@ function parseConsolidateConfig(raw: Record<string, unknown>): ConsolidateConfig
   return {
     autoArchiveDays: typeof c?.autoArchiveDays === "number" ? c.autoArchiveDays : 30,
     autoFlush: {
-      enabled: autoFlush.enabled === true,
+      enabled: autoFlush.enabled !== false,
       minPendingSessions:
         typeof autoFlush.minPendingSessions === "number" &&
         autoFlush.minPendingSessions > 0
@@ -93,20 +100,11 @@ export function readConfigAtRepo(repoRoot: string): HermesConfig | null {
         storage: { backend: "file" },
         assistants,
         debug: raw.debug === true,
-        llm: {
-          enabled: false,
-          provider: "openai",
-          baseUrl: "https://api.openai.com/v1",
-          model: "gpt-4o",
-          apiKey: "",
-          timeoutMs: 60_000,
-          maxInputChars: 24_000,
-          mode: "async",
-        },
+        llm: defaultDisabledLlmConfig(),
         consolidate: {
           autoArchiveDays: 30,
           autoFlush: {
-            enabled: false,
+            enabled: true,
             minPendingSessions: 3,
             minIntervalMinutes: 30,
             maxPendingChars: 20_000,

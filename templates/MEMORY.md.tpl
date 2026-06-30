@@ -2,7 +2,7 @@
 
 最后更新: — | 域: 0 | 规则: 0 | 工作流: 0 | 决策: 0 | 踩坑: 0
 
-> 此文件由 `hermes flush` 后 LLM 自动生成，也可手动编辑。
+> 此文件由 `npx @riconext/hermes-repo flush` 后 LLM 自动生成，也可手动编辑。
 > 编辑时请保留 <!-- user-edit-start --> ... <!-- user-edit-end --> 标记。
 
 ## 必读规则
@@ -19,7 +19,7 @@
 |----|------|------|
 | — | — | — |
 
-（首次 `hermes flush` 后自动生成）
+（首次 `npx @riconext/hermes-repo flush` 后自动生成）
 
 ## 工作流
 

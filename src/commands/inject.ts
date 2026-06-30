@@ -1,4 +1,8 @@
-import { isCursorInjectHook, readHookInputSync } from "../capture/hookInput.js";
+import {
+  isCodexInjectHook,
+  isCursorInjectHook,
+  readHookInputSync,
+} from "../capture/hookInput.js";
 import { configureDebugLogging } from "../config/debugLog.js";
 import { loadRepoContext } from "../config/readConfig.js";
 import { finalizeHookCommand } from "../hookExit.js";
@@ -16,8 +20,9 @@ export function runInjectCommand(opts: InjectCommandOptions): void {
 
   const hookInput = readHookInputSync();
   const cursorHookOutput = isCursorInjectHook(hookInput);
+  const codexHookOutput = isCodexInjectHook(hookInput);
 
   finalizeHookCommand(() => {
-    runInject(opts.cwd, { cursorHookOutput });
+    runInject(opts.cwd, { cursorHookOutput, codexHookOutput });
   }, opts.strict, debug);
 }

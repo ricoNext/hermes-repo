@@ -2,23 +2,29 @@ import { existsSync, readFileSync } from "node:fs";
 import type { AssistantId } from "./assistants/types.js";
 import type { InitFileAction } from "./types.js";
 import { memoryPath } from "./paths.js";
+import {
+  DEFAULT_LLM_BASE_URL,
+  DEFAULT_LLM_MODEL,
+  DEFAULT_LLM_TIMEOUT_MS,
+  DEFAULT_LLM_MAX_INPUT_CHARS,
+} from "../config/llmConfig.js";
 
 /** v2: init 每次都会写入的完整 config 字段（已有自定义值优先保留） */
 const DEFAULT_LLM = {
   enabled: false,
   provider: "openai",
-  baseUrl: "https://api.openai.com/v1",
-  model: "gpt-4o",
+  baseUrl: DEFAULT_LLM_BASE_URL,
+  model: DEFAULT_LLM_MODEL,
   apiKey: "",
-  timeoutMs: 60_000,
-  maxInputChars: 24_000,
-  mode: "async",
+  timeoutMs: DEFAULT_LLM_TIMEOUT_MS,
+  maxInputChars: DEFAULT_LLM_MAX_INPUT_CHARS,
+  mode: "async" as const,
 };
 
 const DEFAULT_CONSOLIDATE = {
   autoArchiveDays: 30,
   autoFlush: {
-    enabled: false,
+    enabled: true,
     minPendingSessions: 3,
     minIntervalMinutes: 30,
     maxPendingChars: 20_000,

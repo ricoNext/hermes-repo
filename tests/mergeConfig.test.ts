@@ -36,7 +36,7 @@ describe("mergeConfigForInit", () => {
     expect(config.consolidate).toBeDefined();
     expect(config.consolidate?.autoArchiveDays).toBe(30);
     expect(config.consolidate?.autoFlush).toEqual({
-      enabled: false,
+      enabled: true,
       minPendingSessions: 3,
       minIntervalMinutes: 30,
       maxPendingChars: 20_000,

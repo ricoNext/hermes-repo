@@ -130,6 +130,19 @@ describe("init", () => {
     expect(config.assistants).toContain("claude-code");
   });
 
+  it("prints config summary after init", () => {
+    const dir = makeTempDir();
+    const { status, stdout } = runCliInDir(dir, ["init", "-y"]);
+
+    expect(status).toBe(0);
+    expect(stdout).toMatch(/配置摘要/);
+    expect(stdout).toMatch(/assistants: claude-code/);
+    expect(stdout).toMatch(/debug logs: off/);
+    expect(stdout).toMatch(/llm: not ready/);
+    expect(stdout).toMatch(/autoFlush: on/);
+    expect(stdout).toMatch(/apiKey=missing/);
+  });
+
   it("init -y --tools unknown fails", () => {
     const dir = makeTempDir();
     const { status, stderr } = runCliInDir(dir, [

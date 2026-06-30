@@ -29,7 +29,7 @@ export interface InjectResult {
  */
 export function runInject(
   cwd?: string,
-  options?: { cursorHookOutput?: boolean },
+  options?: { cursorHookOutput?: boolean; codexHookOutput?: boolean },
 ): InjectResult {
   const ctx = loadRepoContext(cwd);
   if (!ctx) {
@@ -75,7 +75,19 @@ export function runInject(
   }
 
   // 输出
-  if (options?.cursorHookOutput) {
+  if (options?.codexHookOutput) {
+    // Codex SessionStart hook 期望 JSON 输出:
+    // { continue: true, hookSpecificOutput: { hookEventName: "SessionStart", additionalContext: "..." } }
+    process.stdout.write(
+      `${JSON.stringify({
+        continue: true,
+        hookSpecificOutput: {
+          hookEventName: "SessionStart",
+          additionalContext: content,
+        },
+      })}\n`,
+    );
+  } else if (options?.cursorHookOutput) {
     process.stdout.write(
       `${JSON.stringify({ additional_context: content })}\n`,
     );

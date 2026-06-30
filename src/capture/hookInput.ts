@@ -42,7 +42,7 @@ function pickStringArray(
 /** 路径是否属于某助手 transcript 根目录 */
 export function isTranscriptUnderAssistant(
   transcriptPath: string | undefined,
-  segment: ".codebuddy" | ".claude",
+  segment: ".codebuddy" | ".claude" | ".codex",
 ): boolean {
   if (!transcriptPath) {
     return false;
@@ -106,6 +106,9 @@ export function isClaudeCaptureHook(hook: HookInput | null | undefined): boolean
   if (isCodebuddyCaptureHook(hook)) {
     return false;
   }
+  if (isCodexCaptureHook(hook)) {
+    return false;
+  }
   if (isTranscriptUnderAssistant(hook.transcriptPath, ".claude")) {
     return true;
   }
@@ -123,16 +126,19 @@ export function isCursorCaptureHook(hook: HookInput | null | undefined): boolean
   if (hook.transcriptPath) {
     if (
       isTranscriptUnderAssistant(hook.transcriptPath, ".codebuddy") ||
-      isTranscriptUnderAssistant(hook.transcriptPath, ".claude")
+      isTranscriptUnderAssistant(hook.transcriptPath, ".claude") ||
+      isTranscriptUnderAssistant(hook.transcriptPath, ".codex")
     ) {
       return false;
     }
   }
+  // Codex 也包含 session_id 但有 conversationId 为空；
+  // Cursor 的特征是包含 conversationId
   const name = hook.hookEventName?.toLowerCase();
-  if (name === "stop") {
+  if (name === "stop" && hook.conversationId) {
     return true;
   }
-  return Boolean(hook.sessionId || hook.conversationId);
+  return Boolean(hook.conversationId);
 }
 
 export function isCursorInjectHook(hook: HookInput | null | undefined): boolean {
@@ -141,4 +147,40 @@ export function isCursorInjectHook(hook: HookInput | null | undefined): boolean 
   }
   const name = hook.hookEventName?.toLowerCase();
   return name === "sessionstart";
+}
+
+export function isCodexInjectHook(hook: HookInput | null | undefined): boolean {
+  if (!hook) {
+    return false;
+  }
+  // Codex SessionStart hook 输入包含 session_id 且 hookEventName 为 "SessionStart"
+  // 排除 Cursor（Cursor 不通过 session_id 区分）
+  const name = hook.hookEventName?.toLowerCase();
+  return name === "sessionstart" && Boolean(hook.sessionId) && !hook.conversationId;
+}
+
+export function isCodexCaptureHook(hook: HookInput | null | undefined): boolean {
+  if (!hook) {
+    return false;
+  }
+  // 优先级 1: transcript_path 指向 ~/.codex/sessions/ 目录
+  if (isTranscriptUnderAssistant(hook.transcriptPath, ".codex")) {
+    return true;
+  }
+  if (isTranscriptUnderAssistant(hook.transcriptPathRaw, ".codex")) {
+    return true;
+  }
+  // 优先级 2: Codex Stop hook 包含 turn_id 且有 session_id
+  // 通过排除 Claude/Cursor/CodeBuddy 来识别——如果 transcript_path 为空或无法归类
+  // 到其他助手，且有 session_id，则视为 Codex
+  if (
+    !hook.transcriptPath &&
+    !isCodebuddyCaptureHook(hook) &&
+    !hook.conversationId &&
+    hook.sessionId &&
+    hook.hookEventName?.toLowerCase() === "stop"
+  ) {
+    return true;
+  }
+  return false;
 }

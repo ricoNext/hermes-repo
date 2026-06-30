@@ -1,5 +1,7 @@
 import { spawnSync } from "node:child_process";
 import { resolve } from "node:path";
+import { isLlmAvailable } from "../config/llmConfig.js";
+import { readConfigAtRepo } from "../config/readConfig.js";
 import {
   DEFAULT_ASSISTANT_IDS,
   parseToolsArg,
@@ -12,6 +14,20 @@ import { mergeHermesGitignore } from "./mergeGitignore.js";
 import type { InitCliOptions, InitReport, InitResolvedOptions } from "./types.js";
 import { writeScaffoldFiles } from "./writeScaffoldFile.js";
 import { gatherInitOptions } from "./prompts.js";
+
+function printInitBanner(): void {
+  console.log(String.raw`
+ _                                               
+| |__   ___ _ __ _ __ ___   ___  ___        _ __ ___ _ __   ___
+| '_ \ / _ \ '__| '_ ' _ \ / _ \/ __|      | '__/ _ \ '_ \ / _ \
+| | | |  __/ |  | | | | | |  __/\__ \      | | |  __/ |_) | (_) |
+|_| |_|\___|_|  |_| |_| |_|\___||___/      |_|  \___| .__/ \___/
+                                                    |_|          
+
+repo-local memory for AI coding assistants
+capture -> consolidate -> inject
+`);
+}
 
 export function resolveTargetDir(cwd?: string): string {
   const targetDir = resolve(cwd ?? process.cwd());
@@ -101,7 +117,41 @@ export function printInitReport(report: InitReport): void {
   console.log("");
 }
 
+function formatStatus(enabled: boolean): string {
+  return enabled ? "on" : "off";
+}
+
+function printConfigSummary(repoRoot: string): void {
+  const config = readConfigAtRepo(repoRoot);
+  if (!config) {
+    console.warn("warn: 无法读取 .memory/config.json，跳过配置摘要");
+    return;
+  }
+
+  const llmReady = isLlmAvailable(config.llm);
+  const apiKeyStatus = config.llm.apiKey.trim() ? "set" : "missing";
+  const autoFlush = config.consolidate.autoFlush;
+
+  console.log("配置摘要:");
+  console.log(`  assistants: ${config.assistants.join(", ") || "(none)"}`);
+  console.log(`  debug logs: ${formatStatus(config.debug)}`);
+  console.log(
+    `  llm: ${llmReady ? "ready" : "not ready"} ` +
+      `(enabled=${formatStatus(config.llm.enabled)}, model=${config.llm.model || "missing"}, apiKey=${apiKeyStatus})`,
+  );
+  console.log(
+    `  autoFlush: ${formatStatus(autoFlush.enabled)} ` +
+      `(sessions>=${autoFlush.minPendingSessions}, chars>=${autoFlush.maxPendingChars}, interval>=${autoFlush.minIntervalMinutes}m)`,
+  );
+  if (autoFlush.enabled && !llmReady) {
+    console.log("  note: autoFlush 已开启，但需要完整 LLM 配置后才会实际执行 flush");
+  }
+  console.log("");
+}
+
 export async function runInit(opts: InitCliOptions): Promise<InitReport> {
+  printInitBanner();
+
   if (!process.stdin.isTTY && !opts.yes) {
     console.error("init requires -y in non-interactive environments");
     process.exit(1);
@@ -155,6 +205,7 @@ export async function runInit(opts: InitCliOptions): Promise<InitReport> {
   }
 
   printInitReport(report);
+  printConfigSummary(resolved.targetDir);
 
   return report;
 }

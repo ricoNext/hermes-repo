@@ -66,6 +66,54 @@ describe("readConfig", () => {
     expect(readConfigAtRepo(root)?.debug).toBe(true);
   });
 
+  it("readConfigAtRepo defaults v2 autoFlush to enabled when missing", () => {
+    const root = mkdtempSync(join(tmpdir(), "hermes-cfg-"));
+    tempDirs.push(root);
+    mkdirSync(join(root, ".memory"), { recursive: true });
+    writeFileSync(
+      join(root, ".memory", "config.json"),
+      `${JSON.stringify({
+        version: 2,
+        storage: { backend: "file" },
+        assistants: ["claude-code"],
+        consolidate: {
+          autoFlush: {
+            minPendingSessions: 2,
+          },
+        },
+      })}\n`,
+      "utf8",
+    );
+
+    const config = readConfigAtRepo(root);
+    expect(config?.consolidate.autoFlush).toMatchObject({
+      enabled: true,
+      minPendingSessions: 2,
+    });
+  });
+
+  it("readConfigAtRepo preserves explicit v2 autoFlush disabled", () => {
+    const root = mkdtempSync(join(tmpdir(), "hermes-cfg-"));
+    tempDirs.push(root);
+    mkdirSync(join(root, ".memory"), { recursive: true });
+    writeFileSync(
+      join(root, ".memory", "config.json"),
+      `${JSON.stringify({
+        version: 2,
+        storage: { backend: "file" },
+        assistants: ["claude-code"],
+        consolidate: {
+          autoFlush: {
+            enabled: false,
+          },
+        },
+      })}\n`,
+      "utf8",
+    );
+
+    expect(readConfigAtRepo(root)?.consolidate.autoFlush.enabled).toBe(false);
+  });
+
   it("loadRepoContext returns null when missing", () => {
     const root = mkdtempSync(join(tmpdir(), "hermes-cfg-"));
     tempDirs.push(root);

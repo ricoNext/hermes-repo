@@ -7,6 +7,12 @@ import { renderTemplate, resolveTemplatePath } from "./templateDir.js";
 import { mergeConfigForInit } from "./mergeConfig.js";
 import { mergeAgentsMd } from "./mergeAgentsMd.js";
 import { shouldWriteFile, writeIfAllowed } from "./scaffoldWrite.js";
+import {
+  DEFAULT_LLM_BASE_URL,
+  DEFAULT_LLM_MODEL,
+  DEFAULT_LLM_TIMEOUT_MS,
+  DEFAULT_LLM_MAX_INPUT_CHARS,
+} from "../config/llmConfig.js";
 
 export { shouldWriteFile } from "./scaffoldWrite.js";
 
@@ -21,17 +27,17 @@ export function buildConfigJson(assistants: AssistantId[]): string {
       llm: {
         enabled: false,
         provider: "openai",
-        baseUrl: "https://api.openai.com/v1",
-        model: "gpt-4o",
+        baseUrl: DEFAULT_LLM_BASE_URL,
+        model: DEFAULT_LLM_MODEL,
         apiKey: "",
-        timeoutMs: 60_000,
-        maxInputChars: 24_000,
+        timeoutMs: DEFAULT_LLM_TIMEOUT_MS,
+        maxInputChars: DEFAULT_LLM_MAX_INPUT_CHARS,
         mode: "async",
       },
       consolidate: {
         autoArchiveDays: 30,
         autoFlush: {
-          enabled: false,
+          enabled: true,
           minPendingSessions: 3,
           minIntervalMinutes: 30,
           maxPendingChars: 20_000,

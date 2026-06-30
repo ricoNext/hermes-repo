@@ -1,6 +1,6 @@
 # Hermes 记忆系统指南
 
-> 本文档由 `hermes init` 自动生成。如需更新记忆结构，运行 `hermes init --force`。
+> 本文档由 `npx @riconext/hermes-repo init` 自动生成。如需更新记忆结构，运行 `npx @riconext/hermes-repo init --force`。
 
 ## 核心概念
 
@@ -8,7 +8,7 @@
 
 **设计原则：**
 - **Captures 是 raw evidence** — 对话记录自动保存到 `captures/raw/`，不等于知识
-- **LLM 提炼后进入知识库** — 手动 `hermes flush` 触发 consolidate，由 LLM 整理成结构化知识
+- **LLM 提炼后进入知识库** — `npx @riconext/hermes-repo flush` 可手动触发 consolidate；配置完整时 capture 也会按阈值自动触发
 - **按业务域组织** — 改库存读 `domains/inventory/`，改报价读 `domains/quoted/`
 - **两阶段注入** — 启动时先加载导航+规则全文，AI 按需读取具体域知识
 
@@ -33,7 +33,7 @@
 
 ## Inject（启动时自动加载）
 
-每次 AI 会话开始时，hook 会自动调用 `hermes inject`：
+每次 AI 会话开始时，hook 会自动调用 `npx @riconext/hermes-repo inject`：
 
 **注入内容：**
 1. `MEMORY.md` 导航摘要（所有知识的索引）
@@ -50,7 +50,7 @@
 
 ## Capture（结束时自动保存）
 
-对话结束时，hook 会自动调用 `hermes capture`：
+对话结束时，hook 会自动调用 `npx @riconext/hermes-repo capture`：
 
 - 所有对话内容保存到 `captures/raw/session-{id}.md`
 - 一个对话一个文件，支持追加
@@ -83,13 +83,13 @@ npx @riconext/hermes-repo flush
 {
   "llm": {
     "enabled": true,
-    "baseUrl": "https://api.openai.com/v1",
-    "model": "gpt-4o",
+    "baseUrl": "https://api.deepseek.com",
+    "model": "deepseek-chat",
     "apiKey": "sk-..."
   },
   "consolidate": {
     "autoFlush": {
-      "enabled": false,
+      "enabled": true,
       "minPendingSessions": 3,
       "minIntervalMinutes": 30,
       "maxPendingChars": 20000
@@ -98,16 +98,16 @@ npx @riconext/hermes-repo flush
 }
 ```
 
-`autoFlush.enabled` 设为 `true` 后，capture 成功写入时会按阈值后台触发 `hermes flush`。
+`autoFlush.enabled` 默认开启。LLM 配置完整后，capture 成功写入时会按阈值后台触发 `npx @riconext/hermes-repo flush`。
 
 ## 常用命令
 
 | 命令 | 用途 |
 |------|------|
-| `hermes init` | 初始化记忆脚手架 |
-| `hermes inject` | 注入上下文（通常由 hook 自动调用） |
-| `hermes capture` | 保存对话记录（通常由 hook 自动调用） |
-| `hermes flush` | 触发 LLM consolidate（手动） |
+| `npx @riconext/hermes-repo init` | 初始化记忆脚手架 |
+| `npx @riconext/hermes-repo inject` | 注入上下文（通常由 hook 自动调用） |
+| `npx @riconext/hermes-repo capture` | 保存对话记录（通常由 hook 自动调用） |
+| `npx @riconext/hermes-repo flush` | 触发 LLM consolidate（手动或由 autoFlush 后台触发） |
 
 ## 知识类型
 

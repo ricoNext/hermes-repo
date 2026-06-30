@@ -6,7 +6,7 @@ export type LlmConfig = LlmConfigV2;
 export const DEFAULT_LLM_TIMEOUT_MS = 60_000;
 export const DEFAULT_LLM_MAX_INPUT_CHARS = 24_000;
 export const DEFAULT_LLM_BASE_URL = "https://api.deepseek.com";
-export const DEFAULT_LLM_MODEL = "deepseek-v4-flash";
+export const DEFAULT_LLM_MODEL = "deepseek-chat";
 
 export function defaultDisabledLlmConfig(): LlmConfig {
   return {

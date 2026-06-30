@@ -33,7 +33,7 @@ describe("llm config", () => {
     expect(
       isLlmAvailable({
         enabled: false,
-        baseUrl: "https://api.openai.com/v1",
+        baseUrl: "https://api.deepseek.com",
         model: "m",
         apiKey: "k",
         timeoutMs: 60000,
@@ -44,8 +44,8 @@ describe("llm config", () => {
     expect(
       isLlmAvailable({
         enabled: true,
-        baseUrl: "https://api.openai.com/v1",
-        model: "gpt-4o-mini",
+        baseUrl: "https://api.deepseek.com",
+        model: "deepseek-chat",
         apiKey: "sk-test",
         timeoutMs: 60000,
         maxInputChars: 24000,
@@ -69,8 +69,8 @@ describe("llm config", () => {
       };
     };
     expect(parsed.llm.enabled).toBe(false);
-    expect(parsed.llm.baseUrl).toBe("https://api.openai.com/v1");
-    expect(parsed.llm.model).toBe("gpt-4o");
+    expect(parsed.llm.baseUrl).toBe("https://api.deepseek.com");
+    expect(parsed.llm.model).toBe("deepseek-chat");
     expect(parsed.llm.apiKey).toBe("");
     expect(parsed.llm.timeoutMs).toBe(60_000);
     expect(parsed.llm.maxInputChars).toBe(24_000);
@@ -87,7 +87,7 @@ describe("llm config", () => {
         assistants: ["claude-code"],
         llm: {
           enabled: true,
-          baseUrl: "https://api.openai.com/v1",
+          baseUrl: "https://api.deepseek.com",
           model: "old-model",
           apiKey: "secret-key",
           timeoutMs: 60000,

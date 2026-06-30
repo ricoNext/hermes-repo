@@ -4,6 +4,8 @@ import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import {
   isClaudeCaptureHook,
+  isCodexCaptureHook,
+  isCodexInjectHook,
   isCodebuddyCaptureHook,
   isCursorCaptureHook,
   isCursorInjectHook,
@@ -62,13 +64,16 @@ describe("hookInput", () => {
       JSON.stringify({
         hook_event_name: "stop",
         session_id: "abc-123",
+        conversation_id: "conv-456",
         workspace_roots: ["/Users/me/proj"],
         status: "completed",
       }),
     );
     expect(hook?.sessionId).toBe("abc-123");
+    expect(hook?.conversationId).toBe("conv-456");
     expect(isCursorCaptureHook(hook)).toBe(true);
     expect(isClaudeCaptureHook(hook)).toBe(false);
+    expect(isCodexCaptureHook(hook)).toBe(false);
   });
 
   it("detects cursor sessionStart", () => {
@@ -76,5 +81,47 @@ describe("hookInput", () => {
       JSON.stringify({ hook_event_name: "sessionStart" }),
     );
     expect(isCursorInjectHook(hook)).toBe(true);
+  });
+
+  it("detects codex capture via transcript_path under .codex", () => {
+    const dir = mkdtempSync(join(tmpdir(), "hermes-hook-"));
+    const jsonl = join(dir, ".codex", "sessions", "session.jsonl");
+    mkdirSync(join(dir, ".codex", "sessions"), { recursive: true });
+    writeFileSync(jsonl, "{}\n", "utf8");
+    const hook = parseHookInputJson(
+      JSON.stringify({
+        hook_event_name: "Stop",
+        transcript_path: jsonl,
+      }),
+    );
+    expect(isCodexCaptureHook(hook)).toBe(true);
+    expect(isClaudeCaptureHook(hook)).toBe(false);
+    expect(isCursorCaptureHook(hook)).toBe(false);
+    expect(isCodebuddyCaptureHook(hook)).toBe(false);
+  });
+
+  it("detects codex capture without transcript_path (session_id + Stop)", () => {
+    const hook = parseHookInputJson(
+      JSON.stringify({
+        hook_event_name: "Stop",
+        session_id: "codex-session-123",
+      }),
+    );
+    expect(isCodexCaptureHook(hook)).toBe(true);
+  });
+
+  it("detects codex SessionStart inject hook", () => {
+    const hook = parseHookInputJson(
+      JSON.stringify({
+        hook_event_name: "SessionStart",
+        session_id: "codex-session-456",
+      }),
+    );
+    expect(isCodexInjectHook(hook)).toBe(true);
+    // Cursor inject should not match (no session_id or has conversationId)
+    const cursorHook = parseHookInputJson(
+      JSON.stringify({ hook_event_name: "sessionStart" }),
+    );
+    expect(isCodexInjectHook(cursorHook)).toBe(false);
   });
 });
