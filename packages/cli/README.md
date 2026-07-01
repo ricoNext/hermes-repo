@@ -25,9 +25,8 @@ capture -> consolidate -> inject
 | Capability | Behavior |
 |------------|----------|
 | Assistant setup | `init` creates `.memory/`, merges `AGENTS.md`, and writes hook config for selected assistants |
-| Session capture | Stop hooks append session summaries to `.memory/captures/raw/session-*.md` |
+| Session capture | Stop hooks append raw session summaries to `.memory/captures/raw/session-*.md` |
 | Session injection | SessionStart hooks print `.memory/MEMORY.md` plus all `.memory/rules/*.md` content |
-| LLM capture upgrade | When LLM is configured, `capture-llm --flush` processes queued per-session upgrade jobs |
 | Consolidation | `flush` uses an OpenAI-compatible LLM to turn raw captures into knowledge files and `MEMORY.md` |
 | Auto flush | With complete LLM config, capture can trigger background `flush` when thresholds are met |
 | Multi-assistant support | Claude Code, Cursor, CodeBuddy, and OpenAI Codex adapters |
@@ -48,7 +47,7 @@ hermes-repo has two stages:
 | Stage | Commands | LLM required? |
 |-------|----------|---------------|
 | Capture & inject | `capture`, `inject` | No |
-| Consolidate | `flush`, `capture-llm`, `autoFlush` | Yes |
+| Consolidate | `flush`, `autoFlush` | Yes |
 
 `capture` only appends session transcripts to `.memory/captures/raw/`. That is raw evidence, not usable project memory.
 
@@ -121,7 +120,6 @@ Runtime:
   Stop -> hermes-repo capture
     resolves the current assistant transcript
     appends a section to captures/raw/session-{id}.md
-    optionally queues a background LLM upgrade job
     may schedule background flush when autoFlush thresholds are met
 
   Manual -> hermes-repo flush
@@ -141,7 +139,7 @@ Runtime:
 
 ## LLM Configuration
 
-Configure LLM to enable consolidation. `flush`, `capture-llm`, and `autoFlush` all depend on it.
+Configure LLM to enable consolidation. `flush` and `autoFlush` depend on it.
 
 hermes-repo uses an OpenAI-compatible Chat Completions endpoint:
 
@@ -154,8 +152,7 @@ hermes-repo uses an OpenAI-compatible Chat Completions endpoint:
     "model": "deepseek-v4-flash",
     "apiKey": "your-key",
     "timeoutMs": 60000,
-    "maxInputChars": 24000,
-    "mode": "async"
+    "maxInputChars": 24000
   },
   "consolidate": {
     "autoFlush": {
@@ -177,12 +174,6 @@ Important details:
 - `consolidate.autoFlush.enabled` is on by default for new projects. With complete LLM config, captures can automatically trigger background `flush` after thresholds are met.
 - If you turn `autoFlush` off, run `npx @riconext/hermes-repo flush` manually after captures accumulate.
 
-Process queued capture upgrades manually:
-
-```bash
-npx @riconext/hermes-repo capture-llm --flush
-```
-
 ## Supported Assistants
 
 | Assistant | Setup written by `init` | Runtime behavior |
@@ -200,7 +191,6 @@ Default non-interactive assistant selection is `claude-code`.
 npx @riconext/hermes-repo init [options]
 npx @riconext/hermes-repo capture [options]
 npx @riconext/hermes-repo inject [options]
-npx @riconext/hermes-repo capture-llm [options]
 npx @riconext/hermes-repo flush [options]
 ```
 
@@ -234,17 +224,6 @@ Usually called by assistant SessionStart hooks. It outputs `MEMORY.md` and all `
 Options:
 
 - `-C, --cwd <dir>`
-- `--strict`
-
-### `capture-llm`
-
-Processes pending capture upgrade jobs.
-
-Options:
-
-- `-C, --cwd <dir>`
-- `--job <id>`
-- `--flush`
 - `--strict`
 
 ### `flush`

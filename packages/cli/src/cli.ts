@@ -1,5 +1,4 @@
 import { Command } from "commander";
-import { runCaptureLlmCommand } from "./commands/captureLlm.js";
 import { runCaptureCommand } from "./commands/capture.js";
 import { runFlushCommandCli } from "./commands/flush.js";
 import { runInjectCommand } from "./commands/inject.js";
@@ -40,18 +39,30 @@ function main(): void {
       "--tools <ids>",
       "逗号分隔的助手 id，如 claude-code（须与 -y 合用）",
     )
+    .option(
+      "--mcp-project-id <id>",
+      "非交互：启用 MCP 并绑定团队项目 UUID",
+    )
+    .option(
+      "--mcp-server-url <url>",
+      "非交互：MCP 服务地址，默认 http://localhost:3000/mcp",
+    )
     .action(
       (options: {
         yes?: boolean;
         force?: boolean;
         cwd?: string;
         tools?: string;
+        mcpProjectId?: string;
+        mcpServerUrl?: string;
       }) => {
         void runInitCommand({
           yes: options.yes,
           force: options.force,
           cwd: options.cwd,
           tools: options.tools,
+          mcpProjectId: options.mcpProjectId,
+          mcpServerUrl: options.mcpServerUrl,
         });
       },
     );
@@ -69,29 +80,6 @@ function main(): void {
         strict: options.strict,
       });
     });
-
-  program
-    .command("capture-llm")
-    .description("异步 LLM 升级 capture（由 capture hook 入队，亦可 --flush）")
-    .option("-C, --cwd <dir>", "目标仓库根目录")
-    .option("--job <id>", "处理指定 pending job")
-    .option("--flush", "处理所有 pending job")
-    .option("--strict", "失败时 exit 1")
-    .action(
-      (options: {
-        cwd?: string;
-        job?: string;
-        flush?: boolean;
-        strict?: boolean;
-      }) => {
-        runCaptureLlmCommand({
-          cwd: options.cwd,
-          job: options.job,
-          flush: options.flush,
-          strict: options.strict,
-        });
-      },
-    );
 
   program
     .command("flush")

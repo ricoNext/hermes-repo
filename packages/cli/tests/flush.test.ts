@@ -101,7 +101,6 @@ describe("flush CLI (v2)", () => {
       apiKey: "k",
       timeoutMs: 60_000,
       maxInputChars: 24_000,
-      mode: "async",
     };
     writeFileSync(configPath, `${JSON.stringify(config)}\n`);
 

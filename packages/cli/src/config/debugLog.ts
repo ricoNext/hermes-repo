@@ -38,7 +38,6 @@ function writeToLogFile(phase: string, line: string): void {
 function logFileNameForPhase(phase: string): string {
   switch (phase) {
     case "capture":
-    case "capture-llm":
       return DEBUG_LOG_FILES.capture;
     case "flush":
       return DEBUG_LOG_FILES.flush;

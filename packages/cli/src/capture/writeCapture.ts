@@ -100,32 +100,6 @@ export function resolveSessionFile(
   return { absolutePath, relativePath, exists: existsSync(absolutePath) };
 }
 
-// ─── Legacy: renderCaptureMarkdown (LLM upgrade 用) ────
-
-/**
- * @deprecated v2 保留用于 LLM upgrade 兼容。Phase 2 将移除或重写为 session 文件的增量更新。
- */
-export function renderCaptureMarkdown(
-  formatted: FormattedCapture,
-  date: string,
-): string {
-  const tagsStr = formatted.tags.map((t) => JSON.stringify(t)).join(", ");
-  const lines = [
-    "---",
-    `type: ${formatted.type}`,
-    `date: ${date}`,
-    `session: ${formatted.sessionId}`,
-    `tags: [${tagsStr}]`,
-    `scope: ${formatted.scope}`,
-    "confidence: pending",
-  ];
-  if (formatted.llmUpgradedAt) {
-    lines.push(`llmUpgradedAt: ${formatted.llmUpgradedAt}`);
-  }
-  lines.push("---", "", formatted.bodyMarkdown);
-  return `${lines.join("\n")}\n`;
-}
-
 // ─── Core: append capture to session file ─────────────
 
 interface AppendCaptureResult {

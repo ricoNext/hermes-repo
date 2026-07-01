@@ -38,7 +38,6 @@ function makeV2Repo(overrides?: Partial<HermesConfig>): string {
       apiKey: "",
       timeoutMs: 60_000,
       maxInputChars: 24_000,
-      mode: "async",
     },
     consolidate: {
       autoArchiveDays: 30,
@@ -105,7 +104,6 @@ function llmConfig(): HermesConfig["llm"] {
     apiKey: "k",
     timeoutMs: 60_000,
     maxInputChars: 24_000,
-    mode: "async",
   };
 }
 
