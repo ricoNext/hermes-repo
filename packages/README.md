@@ -5,8 +5,8 @@
 | 包 | 说明 | 状态 |
 | --- | --- | --- |
 | `@riconext/hermes-repo` | CLI / hooks / 本地 `.memory/` 工作流 | 已实现 |
-| `@riconext/hermes-mcp-server` | MCP 记忆服务器（FastMCP + PostgreSQL） | 占位 |
-| `@riconext/hermes-ui` | 团队记忆 Web 管理平台 | 占位 |
+| `@riconext/hermes-mcp-server` | MCP 记忆服务器（FastMCP + PostgreSQL） | 已初始化 |
+| `@riconext/hermes-ui` | 团队记忆 Web 管理平台 | 已初始化（Next.js 16） |
 
 ```text
 packages/

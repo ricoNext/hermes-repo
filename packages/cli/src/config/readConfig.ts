@@ -13,8 +13,14 @@ import type {
   ConsolidateConfig,
   HermesConfig,
   LlmConfigV2,
+  McpConfig,
   RepoContext,
+  StorageConfig,
 } from "./types.js";
+import {
+  DEFAULT_MCP_SERVER_URL,
+  defaultDisabledMcpConfig,
+} from "./mcpConfig.js";
 
 function isAssistantId(value: unknown): value is AssistantId {
   return typeof value === "string";
@@ -36,7 +42,6 @@ function parseLlmConfig(raw: Record<string, unknown>): LlmConfigV2 {
       typeof llm?.maxInputChars === "number" && llm.maxInputChars > 0
         ? llm.maxInputChars
         : DEFAULT_LLM_MAX_INPUT_CHARS,
-    mode: llm?.mode === "sync" ? "sync" : "async",
   };
 }
 
@@ -69,6 +74,41 @@ function parseConsolidateConfig(raw: Record<string, unknown>): ConsolidateConfig
   };
 }
 
+function parseMcpConfig(raw: Record<string, unknown>): McpConfig {
+  const storage =
+    raw.storage && typeof raw.storage === "object" && !Array.isArray(raw.storage)
+      ? (raw.storage as Record<string, unknown>)
+      : {};
+  const mcp =
+    storage.mcp && typeof storage.mcp === "object" && !Array.isArray(storage.mcp)
+      ? (storage.mcp as Record<string, unknown>)
+      : {};
+
+  return {
+    enabled: mcp.enabled === true,
+    serverUrl:
+      typeof mcp.serverUrl === "string" && mcp.serverUrl.trim()
+        ? mcp.serverUrl.trim()
+        : DEFAULT_MCP_SERVER_URL,
+    projectId:
+      typeof mcp.projectId === "string" && mcp.projectId.trim()
+        ? mcp.projectId.trim()
+        : undefined,
+  };
+}
+
+function parseStorageConfig(raw: Record<string, unknown>): StorageConfig {
+  const storage =
+    raw.storage && typeof raw.storage === "object" && !Array.isArray(raw.storage)
+      ? (raw.storage as Record<string, unknown>)
+      : {};
+
+  return {
+    backend: storage.backend === "file" ? "file" : "file",
+    mcp: parseMcpConfig(raw),
+  };
+}
+
 export function readConfigAtRepo(repoRoot: string): HermesConfig | null {
   const configPath = join(repoRoot, ".memory", "config.json");
   try {
@@ -82,7 +122,7 @@ export function readConfigAtRepo(repoRoot: string): HermesConfig | null {
         : [];
       return {
         version: 2,
-        storage: { backend: (raw.storage as Record<string, unknown>)?.backend === "file" ? "file" : "file" },
+        storage: parseStorageConfig(raw),
         assistants,
         debug: raw.debug === true,
         llm: parseLlmConfig(raw),
@@ -97,7 +137,7 @@ export function readConfigAtRepo(repoRoot: string): HermesConfig | null {
         : [];
       return {
         version: 2, // 自动升级为 v2
-        storage: { backend: "file" },
+        storage: { backend: "file", mcp: defaultDisabledMcpConfig() },
         assistants,
         debug: raw.debug === true,
         llm: defaultDisabledLlmConfig(),

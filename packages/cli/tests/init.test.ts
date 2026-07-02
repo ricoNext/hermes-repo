@@ -108,9 +108,43 @@ describe("init", () => {
     };
     expect(config.version).toBe(2); // v2: version=2
     expect(config.storage.backend).toBe("file");
-    expect(config.storage.mcp).toBeUndefined();
+    expect(config.storage.mcp).toEqual({
+      enabled: false,
+      serverUrl: "http://localhost:3000/mcp",
+    });
     expect(config.assistants).toContain("claude-code");
     expect(config.debug).toBe(false);
+  });
+
+  it("init -y --mcp-project-id writes projectId into config.json and enables mcp", () => {
+    const dir = makeTempDir();
+    const projectId = "00000000-0000-4000-8000-000000000001";
+    runCliInDir(dir, [
+      "init",
+      "-y",
+      "--mcp-project-id",
+      projectId,
+      "--mcp-server-url",
+      "http://localhost:3000/mcp",
+    ]);
+
+    const config = JSON.parse(
+      readFileSync(join(dir, ".memory/config.json"), "utf8"),
+    ) as {
+      storage: {
+        mcp?: {
+          enabled: boolean;
+          serverUrl: string;
+          projectId: string;
+        };
+      };
+    };
+    expect(config.storage.mcp).toEqual({
+      enabled: true,
+      serverUrl: "http://localhost:3000/mcp",
+      projectId,
+    });
+    expect(existsSync(join(dir, ".memory/project.json"))).toBe(false);
   });
 
   it("init -y --tools claude-code writes assistants", () => {
@@ -162,7 +196,6 @@ describe("init", () => {
           apiKey: "sk-test",
           timeoutMs: 60000,
           maxInputChars: 24000,
-          mode: "async",
         },
         consolidate: {
           autoArchiveDays: 30,

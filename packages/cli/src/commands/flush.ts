@@ -7,6 +7,7 @@ import { loadRepoContext } from "../config/readConfig.js";
 export async function runFlushCommandCli(opts: {
   cwd?: string;
   force?: boolean;
+  ifNeeded?: boolean;
   dryRun?: boolean;
   strict?: boolean;
 }): Promise<void> {
@@ -16,13 +17,14 @@ export async function runFlushCommandCli(opts: {
   debugLog(
     debug,
     "flush",
-    `start: force=${opts.force === true}, dryRun=${opts.dryRun === true}`,
+    `start: force=${opts.force === true}, ifNeeded=${opts.ifNeeded === true}, dryRun=${opts.dryRun === true}`,
   );
 
   try {
     const result = await runFlushCommand({
       cwd: opts.cwd,
       force: opts.force,
+      ifNeeded: opts.ifNeeded,
       dryRun: opts.dryRun,
     });
     debugLog(
@@ -54,6 +56,10 @@ export async function runFlushCommandCli(opts: {
       }
     } else {
       switch (result.reason) {
+        case "thresholds-not-met":
+          // 静默退出 - 这是 --if-needed 的正常情况
+          debugLog(debug, "flush", "thresholds not met, skipping");
+          break;
         case "not-initialized":
           console.error(
             "hermes-repo flush: not initialized (.memory/config.json missing)",

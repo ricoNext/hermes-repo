@@ -17,7 +17,7 @@
 ```
 .memory/
 ├── MEMORY.md              # ← 导航中心（自动生成 + 可手动编辑）
-├── config.json            # 配置（含 LLM 设置）
+├── config.json            # 配置（含 LLM、MCP 设置）
 │
 ├── rules/                 # 必读规则（编码规范、约定）
 ├── domains/{domain}/      # 业务域知识（LLM 自动分类）
@@ -99,6 +99,30 @@ npx @riconext/hermes-repo flush
 ```
 
 `autoFlush.enabled` 默认开启。LLM 配置完整后，capture 成功写入时会按阈值后台触发 `npx @riconext/hermes-repo flush`。
+
+## MCP 团队记忆（可选）
+
+若 init 时启用了 MCP 团队记忆，`.memory/config.json` 的 `storage.mcp` 会包含项目绑定：
+
+```json
+{
+  "storage": {
+    "mcp": {
+      "enabled": true,
+      "serverUrl": "http://localhost:3000/mcp",
+      "projectId": "00000000-0000-4000-8000-000000000001"
+    }
+  }
+}
+```
+
+**使用 Hermes MCP 工具时：**
+
+1. 先读取 `.memory/config.json` 的 `storage.mcp.projectId`
+2. 调用 `add_memory` / `search_memories` 时必须传入该 `projectId`
+3. 不确定项目列表时，可先调用 `list_projects`
+
+Cursor 中 MCP 为全局安装，**不要**在 MCP 连接 header 里写 `X-Project-Id`。
 
 ## 常用命令
 

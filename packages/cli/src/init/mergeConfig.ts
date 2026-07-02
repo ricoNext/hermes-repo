@@ -2,13 +2,14 @@ import { existsSync, readFileSync } from "node:fs";
 import type { AssistantId } from "./assistants/types.js";
 import type { InitFileAction } from "./types.js";
 import { memoryPath } from "./paths.js";
-import type { LlmConfigV2 } from "../config/types.js";
+import type { LlmConfigV2, McpConfig } from "../config/types.js";
 import {
   DEFAULT_LLM_BASE_URL,
   DEFAULT_LLM_MODEL,
   DEFAULT_LLM_TIMEOUT_MS,
   DEFAULT_LLM_MAX_INPUT_CHARS,
 } from "../config/llmConfig.js";
+import { defaultDisabledMcpConfig } from "../config/mcpConfig.js";
 
 /** v2: init 每次都会写入的完整 config 字段（已有自定义值优先保留） */
 const DEFAULT_LLM = {
@@ -19,7 +20,6 @@ const DEFAULT_LLM = {
   apiKey: "",
   timeoutMs: DEFAULT_LLM_TIMEOUT_MS,
   maxInputChars: DEFAULT_LLM_MAX_INPUT_CHARS,
-  mode: "async" as const,
 };
 
 const DEFAULT_CONSOLIDATE = {
@@ -36,6 +36,7 @@ export function mergeConfigForInit(
   repoRoot: string,
   assistants: AssistantId[],
   llmOverride?: Partial<LlmConfigV2>,
+  mcpOverride?: Partial<McpConfig> & Pick<McpConfig, "enabled" | "serverUrl">,
 ): { content: string; action: InitFileAction } {
   const configPath = memoryPath(repoRoot, "config.json");
   const existed = existsSync(configPath);
@@ -75,12 +76,24 @@ export function mergeConfigForInit(
       ? (prevConsolidate.autoFlush as Record<string, unknown>)
       : {};
 
+  const prevMcp =
+    prevStorage.mcp &&
+    typeof prevStorage.mcp === "object" &&
+    !Array.isArray(prevStorage.mcp)
+      ? (prevStorage.mcp as Record<string, unknown>)
+      : {};
+
   const merged: Record<string, unknown> = {
     ...existing,
     version: 2,
     storage: {
       ...prevStorage,
       backend: "file",
+      mcp: {
+        ...defaultDisabledMcpConfig(),
+        ...prevMcp,
+        ...(mcpOverride ?? {}),
+      },
     },
     assistants,
     debug: existing.debug === true,

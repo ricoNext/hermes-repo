@@ -55,5 +55,6 @@ describe("cli v2", () => {
     expect(stdout).not.toMatch(/\bref\b/);
     expect(stdout).not.toMatch(/\bsearch\b/);
     expect(stdout).not.toMatch(/\bstats\b/);
+    expect(stdout).not.toMatch(/\bcapture-llm\b/);
   });
 });

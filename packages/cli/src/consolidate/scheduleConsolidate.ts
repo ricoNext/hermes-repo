@@ -32,6 +32,7 @@ function cliPath(): string {
 export async function runFlushCommand(opts: {
   cwd?: string;
   force?: boolean;
+  ifNeeded?: boolean;
   dryRun?: boolean;
   debug?: boolean;
 }): Promise<ConsolidateResultV2> {
@@ -48,11 +49,40 @@ export async function runFlushCommand(opts: {
     };
   }
 
+  // 检查 LLM 配置
+  if (!isLlmAvailable(ctx.config.llm)) {
+    return {
+      ran: false,
+      reason: "llm-not-enabled",
+      sessionsProcessed: 0,
+      knowledgeCreated: 0,
+      knowledgeUpdated: 0,
+      skippedCount: 0,
+      archived: 0,
+    };
+  }
+
   // 检查是否有可处理的 session
   const allSessions = scanAllSessions(ctx.repoRoot);
   const pendingSessions = opts.force
     ? allSessions
     : filterPendingSessions(allSessions);
+
+  // --if-needed 模式：检查是否满足 autoFlush 阈值
+  if (opts.ifNeeded) {
+    const state = readConsolidateState(ctx.repoRoot);
+    if (!shouldAutoFlush(pendingSessions, ctx.config.consolidate, state.lastConsolidatedAt)) {
+      return {
+        ran: false,
+        reason: "thresholds-not-met",
+        sessionsProcessed: 0,
+        knowledgeCreated: 0,
+        knowledgeUpdated: 0,
+        skippedCount: 0,
+        archived: 0,
+      };
+    }
+  }
 
   if (pendingSessions.length === 0 && !opts.force && !opts.dryRun) {
     return {

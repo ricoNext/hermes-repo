@@ -1,0 +1,93 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String     @id @default(uuid())
+  username     String     @unique
+  email        String?    @unique
+  passwordHash String
+  name         String
+  systemRole   SystemRole @default(MEMBER)
+  avatarUrl    String?
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  memories     Memory[]
+  projectRoles ProjectRole[]
+}
+
+model Project {
+  id          String   @id @default(uuid())
+  name        String
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  memories     Memory[]
+  projectRoles ProjectRole[]
+}
+
+model ProjectRole {
+  id        String   @id @default(uuid())
+  userId    String
+  projectId String
+  role      Role     @default(MEMBER)
+  createdAt DateTime @default(now())
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, projectId])
+}
+
+model Memory {
+  id         String     @id @default(uuid())
+  title      String
+  content    String     @db.Text
+  type       MemoryType @default(NOTE)
+  visibility Visibility @default(PRIVATE)
+  importance Int        @default(1)
+  tags       String[]
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
+
+  authorId  String
+  author    User    @relation(fields: [authorId], references: [id])
+  projectId String
+  project   Project @relation(fields: [projectId], references: [id])
+
+  @@index([projectId])
+  @@index([authorId])
+  @@index([visibility])
+}
+
+enum SystemRole {
+  SUPER_ADMIN
+  ADMIN
+  MEMBER
+}
+
+enum Role {
+  OWNER
+  ADMIN
+  MEMBER
+}
+
+enum MemoryType {
+  NOTE
+  CONTEXT
+  PREFERENCE
+  SNIPPET
+}
+
+enum Visibility {
+  PRIVATE
+  SHARED
+  PUBLIC
+}

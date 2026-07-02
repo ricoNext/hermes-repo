@@ -12,6 +12,11 @@ import { listAvailable } from "./assistants/registry.js";
 import type { AssistantId } from "./assistants/types.js";
 import type { InitCliOptions, InitResolvedOptions } from "./types.js";
 import { memoryPath } from "./paths.js";
+import {
+  DEFAULT_MCP_SERVER_URL,
+  isValidProjectId,
+} from "../config/mcpConfig.js";
+import { readProjectBindingAtRepo } from "../config/readProjectBinding.js";
 
 function isInitialized(targetDir: string): boolean {
   const configPath = memoryPath(targetDir, "config.json");
@@ -99,7 +104,61 @@ async function gatherLlmOptions(
       typeof existing.maxInputChars === "number" && existing.maxInputChars > 0
         ? existing.maxInputChars
         : DEFAULT_LLM_MAX_INPUT_CHARS,
-    mode: existing.mode === "sync" ? "sync" : "async",
+  };
+}
+
+async function gatherMcpOptions(
+  targetDir: string,
+): Promise<InitResolvedOptions["mcp"]> {
+  const existingBinding = readProjectBindingAtRepo(targetDir);
+  const existingConfigPath = memoryPath(targetDir, "config.json");
+  let existingServerUrl = DEFAULT_MCP_SERVER_URL;
+  let existingEnabled = Boolean(existingBinding);
+
+  if (existsSync(existingConfigPath)) {
+    try {
+      const config = JSON.parse(readFileSync(existingConfigPath, "utf8")) as {
+        storage?: { mcp?: { enabled?: boolean; serverUrl?: string } };
+      };
+      if (typeof config.storage?.mcp?.serverUrl === "string") {
+        existingServerUrl = config.storage.mcp.serverUrl;
+      }
+      if (config.storage?.mcp?.enabled === true) {
+        existingEnabled = true;
+      }
+    } catch {
+      // ignore malformed config
+    }
+  }
+
+  const enable = await confirm({
+    message: existingEnabled
+      ? "检测到已启用记忆知识库 MCP 服务，是否更新 MCP 配置？"
+      : "是否启用记忆知识库 MCP 服务？（启动后可以解决云端记忆同步能力， 适用于团队记忆知识库场景）",
+    default: existingEnabled,
+  });
+
+  if (!enable) {
+    return { enabled: false, serverUrl: existingServerUrl, projectId: "" };
+  }
+
+  const projectId = await input({
+    message: "MCP 项目 ID（在 Hermes UI 中获取）",
+    default: existingBinding?.projectId ?? "",
+    validate: (value) =>
+      isValidProjectId(value) || "请输入有效的 UUID 格式 projectId",
+  });
+
+  const serverUrl = await input({
+    message: "MCP 服务地址",
+    default: existingServerUrl,
+    validate: (value) => value.trim().length > 0 || "serverUrl 不能为空",
+  });
+
+  return {
+    enabled: true,
+    serverUrl: serverUrl.trim(),
+    projectId: projectId.trim(),
   };
 }
 
@@ -130,6 +189,7 @@ export async function gatherInitOptions(
   });
 
   const llm = await gatherLlmOptions(targetDir);
+  const mcp = await gatherMcpOptions(targetDir);
 
   if (isInitialized(targetDir)) {
     const continueInit = await confirm({
@@ -143,6 +203,7 @@ export async function gatherInitOptions(
         includeExampleTemplates,
         assistants,
         llm,
+        mcp,
         cancelled: true,
       };
     }
@@ -154,6 +215,7 @@ export async function gatherInitOptions(
     includeExampleTemplates,
     assistants,
     llm,
+    mcp,
     cancelled: false,
   };
 }

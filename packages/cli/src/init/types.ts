@@ -10,6 +10,10 @@ export interface InitCliOptions {
   includeExampleTemplates?: boolean;
   /** 仅测试：直接指定助手列表，跳过交互与 --tools */
   assistants?: AssistantId[];
+  /** 非交互：启用 MCP 并绑定项目 ID */
+  mcpProjectId?: string;
+  /** 非交互：MCP 服务地址 */
+  mcpServerUrl?: string;
 }
 
 export interface InitResolvedOptions {
@@ -18,6 +22,11 @@ export interface InitResolvedOptions {
   includeExampleTemplates: boolean;
   assistants: AssistantId[];
   llm?: Partial<LlmConfigV2>;
+  mcp?: {
+    enabled: boolean;
+    serverUrl: string;
+    projectId: string;
+  };
   cancelled: boolean;
 }
 

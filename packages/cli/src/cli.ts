@@ -1,5 +1,4 @@
 import { Command } from "commander";
-import { runCaptureLlmCommand } from "./commands/captureLlm.js";
 import { runCaptureCommand } from "./commands/capture.js";
 import { runFlushCommandCli } from "./commands/flush.js";
 import { runInjectCommand } from "./commands/inject.js";
@@ -40,18 +39,30 @@ function main(): void {
       "--tools <ids>",
       "逗号分隔的助手 id，如 claude-code（须与 -y 合用）",
     )
+    .option(
+      "--mcp-project-id <id>",
+      "非交互：启用 MCP 并绑定团队项目 UUID",
+    )
+    .option(
+      "--mcp-server-url <url>",
+      "非交互：MCP 服务地址，默认 http://localhost:3000/mcp",
+    )
     .action(
       (options: {
         yes?: boolean;
         force?: boolean;
         cwd?: string;
         tools?: string;
+        mcpProjectId?: string;
+        mcpServerUrl?: string;
       }) => {
         void runInitCommand({
           yes: options.yes,
           force: options.force,
           cwd: options.cwd,
           tools: options.tools,
+          mcpProjectId: options.mcpProjectId,
+          mcpServerUrl: options.mcpServerUrl,
         });
       },
     );
@@ -71,47 +82,27 @@ function main(): void {
     });
 
   program
-    .command("capture-llm")
-    .description("异步 LLM 升级 capture（由 capture hook 入队，亦可 --flush）")
-    .option("-C, --cwd <dir>", "目标仓库根目录")
-    .option("--job <id>", "处理指定 pending job")
-    .option("--flush", "处理所有 pending job")
-    .option("--strict", "失败时 exit 1")
-    .action(
-      (options: {
-        cwd?: string;
-        job?: string;
-        flush?: boolean;
-        strict?: boolean;
-      }) => {
-        runCaptureLlmCommand({
-          cwd: options.cwd,
-          job: options.job,
-          flush: options.flush,
-          strict: options.strict,
-        });
-      },
-    );
-
-  program
     .command("flush")
     .description(
       "手动触发 consolidate：LLM 提炼 captures → 知识库 + MEMORY.md",
     )
     .option("-C, --cwd <dir>", "目标仓库根目录")
     .option("--force", "重处理全部 session 文件")
+    .option("--if-needed", "仅在满足 autoFlush 阈值时执行")
     .option("--dry-run", "仅预览，不写入")
     .option("--strict", "失败时 exit 1")
     .action(
       (options: {
         cwd?: string;
         force?: boolean;
+        ifNeeded?: boolean;
         dryRun?: boolean;
         strict?: boolean;
       }) => {
         void runFlushCommandCli({
           cwd: options.cwd,
           force: options.force,
+          ifNeeded: options.ifNeeded,
           dryRun: options.dryRun,
           strict: options.strict,
         });

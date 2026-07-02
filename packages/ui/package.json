@@ -1,15 +1,52 @@
 {
   "name": "@riconext/hermes-ui",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "private": true,
-  "description": "团队记忆管理 UI 平台（Next.js + Shadcn/ui）",
+  "description": "团队记忆管理 UI 平台（Next.js 16 + Shadcn/ui）",
   "license": "MIT",
   "scripts": {
-    "build": "node -e \"console.log('@riconext/hermes-ui: build not implemented yet')\"",
-    "dev": "node -e \"console.log('@riconext/hermes-ui: dev not implemented yet')\"",
-    "typecheck": "node -e \"console.log('@riconext/hermes-ui: typecheck not implemented yet')\""
+    "dev": "next dev -p 3001",
+    "build": "next build",
+    "start": "next start -p 3001",
+    "lint": "eslint",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@base-ui/react": "^1.6.0",
+    "@hookform/resolvers": "^5.4.0",
+    "@tanstack/react-query": "^5.101.2",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
+    "lucide-react": "^1.22.0",
+    "next": "16.2.9",
+    "react": "19.2.4",
+    "react-dom": "19.2.4",
+    "react-hook-form": "^7.80.0",
+    "shadcn": "^4.12.0",
+    "tailwind-merge": "^3.6.0",
+    "tw-animate-css": "^1.4.0",
+    "zod": "^4.4.3",
+    "zustand": "^5.0.14"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4",
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "eslint": "^9",
+    "eslint-config-next": "16.2.9",
+    "tailwindcss": "^4",
+    "typescript": "^5"
   },
   "engines": {
     "node": ">=20"
-  }
+  },
+  "ignoreScripts": [
+    "sharp",
+    "unrs-resolver"
+  ],
+  "trustedDependencies": [
+    "sharp",
+    "unrs-resolver"
+  ]
 }

@@ -2,6 +2,7 @@ import { spawnSync } from "node:child_process";
 import { resolve } from "node:path";
 import { isLlmAvailable } from "../config/llmConfig.js";
 import { readConfigAtRepo } from "../config/readConfig.js";
+import { readProjectBindingAtRepo } from "../config/readProjectBinding.js";
 import {
   DEFAULT_ASSISTANT_IDS,
   parseToolsArg,
@@ -14,6 +15,7 @@ import { mergeHermesGitignore } from "./mergeGitignore.js";
 import type { InitCliOptions, InitReport, InitResolvedOptions } from "./types.js";
 import { writeScaffoldFiles } from "./writeScaffoldFile.js";
 import { gatherInitOptions } from "./prompts.js";
+import { DEFAULT_MCP_SERVER_URL, isValidProjectId } from "../config/mcpConfig.js";
 
 function printInitBanner(): void {
   console.log(String.raw`
@@ -152,6 +154,19 @@ function printConfigSummary(repoRoot: string): void {
   } else {
     console.log("  LLM 配置不完整：目前无法使用 flush / autoFlush 整理记忆");
   }
+
+  const mcp = config.storage.mcp;
+  const projectBinding = readProjectBindingAtRepo(repoRoot);
+  if (mcp?.enabled && projectBinding) {
+    console.log(
+      `  mcp: enabled (server=${mcp.serverUrl}, projectId=${projectBinding.projectId})`,
+    );
+    console.log(
+      "  使用 MCP 工具时，请从 .memory/config.json 的 storage.mcp.projectId 读取并传入 add_memory / search_memories",
+    );
+  } else {
+    console.log("  mcp: off");
+  }
   console.log("");
 }
 
@@ -173,11 +188,24 @@ export async function runInit(opts: InitCliOptions): Promise<InitReport> {
   if (opts.yes) {
     const targetDir = resolveTargetDir(opts.cwd);
     const selected = resolveSelectedAssistants(opts);
+    const mcp =
+      opts.mcpProjectId && isValidProjectId(opts.mcpProjectId)
+        ? {
+            enabled: true,
+            serverUrl: opts.mcpServerUrl?.trim() || DEFAULT_MCP_SERVER_URL,
+            projectId: opts.mcpProjectId.trim(),
+          }
+        : {
+            enabled: false,
+            serverUrl: opts.mcpServerUrl?.trim() || DEFAULT_MCP_SERVER_URL,
+            projectId: "",
+          };
     resolved = {
       targetDir,
       force: Boolean(opts.force),
       includeExampleTemplates: opts.includeExampleTemplates ?? true,
       assistants: mergeAssistants(targetDir, selected),
+      mcp,
       cancelled: false,
     };
   } else {

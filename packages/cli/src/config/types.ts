@@ -8,7 +8,6 @@ export interface LlmConfigV2 {
   apiKey: string;
   timeoutMs: number;
   maxInputChars: number;
-  mode: "async" | "sync";
 }
 
 export interface ConsolidateConfig {
@@ -21,10 +20,25 @@ export interface ConsolidateConfig {
   };
 }
 
+export interface McpConfig {
+  enabled: boolean;
+  serverUrl: string;
+  projectId?: string;
+}
+
+export interface StorageConfig {
+  backend: string;
+  mcp?: McpConfig;
+}
+
+export interface ProjectBinding {
+  projectId: string;
+}
+
 /** v2 配置（含 LLM 和 consolidate 节） */
 export interface HermesConfig {
   version: number;
-  storage: { backend: string };
+  storage: StorageConfig;
   assistants: AssistantId[];
   debug: boolean;
   llm: LlmConfigV2;

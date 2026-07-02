@@ -38,7 +38,6 @@ describe("llm config", () => {
         apiKey: "k",
         timeoutMs: 60000,
         maxInputChars: 24000,
-        mode: "async",
       }),
     ).toBe(false);
     expect(
@@ -49,7 +48,6 @@ describe("llm config", () => {
         apiKey: "sk-test",
         timeoutMs: 60000,
         maxInputChars: 24000,
-        mode: "async",
       }),
     ).toBe(true);
   });
@@ -65,7 +63,6 @@ describe("llm config", () => {
         apiKey: string;
         timeoutMs: number;
         maxInputChars: number;
-        mode: string;
       };
     };
     expect(parsed.llm.enabled).toBe(false);
@@ -74,7 +71,6 @@ describe("llm config", () => {
     expect(parsed.llm.apiKey).toBe("");
     expect(parsed.llm.timeoutMs).toBe(60_000);
     expect(parsed.llm.maxInputChars).toBe(24_000);
-    expect(parsed.llm.mode).toBe("async");
   });
 
   it("mergeConfigForInit preserves existing apiKey", () => {
@@ -92,7 +88,6 @@ describe("llm config", () => {
           apiKey: "secret-key",
           timeoutMs: 60000,
           maxInputChars: 24000,
-          mode: "async",
         },
       })}\n`,
       "utf8",

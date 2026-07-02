@@ -13,6 +13,7 @@ import {
   DEFAULT_LLM_TIMEOUT_MS,
   DEFAULT_LLM_MAX_INPUT_CHARS,
 } from "../config/llmConfig.js";
+import { DEFAULT_MCP_SERVER_URL } from "../config/mcpConfig.js";
 
 export { shouldWriteFile } from "./scaffoldWrite.js";
 
@@ -21,7 +22,13 @@ export function buildConfigJson(assistants: AssistantId[]): string {
   return `${JSON.stringify(
     {
       version: 2,
-      storage: { backend: "file" },
+      storage: {
+        backend: "file",
+        mcp: {
+          enabled: false,
+          serverUrl: DEFAULT_MCP_SERVER_URL,
+        },
+      },
       assistants,
       debug: false,
       llm: {
@@ -32,7 +39,6 @@ export function buildConfigJson(assistants: AssistantId[]): string {
         apiKey: "",
         timeoutMs: DEFAULT_LLM_TIMEOUT_MS,
         maxInputChars: DEFAULT_LLM_MAX_INPUT_CHARS,
-        mode: "async",
       },
       consolidate: {
         autoArchiveDays: 30,
@@ -54,8 +60,22 @@ function writeConfigJson(
   repoRoot: string,
   assistants: AssistantId[],
   llmOverride?: InitResolvedOptions["llm"],
+  mcpOverride?: InitResolvedOptions["mcp"],
 ): void {
-  const { content, action } = mergeConfigForInit(repoRoot, assistants, llmOverride);
+  const mcpConfig = mcpOverride
+    ? {
+        enabled: Boolean(mcpOverride.enabled && mcpOverride.projectId),
+        serverUrl: mcpOverride.serverUrl,
+        ...(mcpOverride.projectId ? { projectId: mcpOverride.projectId } : {}),
+      }
+    : undefined;
+
+  const { content, action } = mergeConfigForInit(
+    repoRoot,
+    assistants,
+    llmOverride,
+    mcpConfig,
+  );
   const absolutePath = memoryPath(repoRoot, "config.json");
   writeFileSync(absolutePath, content, "utf8");
   report.files.push({ path: ".memory/config.json", action });
@@ -84,9 +104,7 @@ export function writeScaffoldFiles(
 ): void {
   const { force, includeExampleTemplates, assistants } = opts;
 
-  writeConfigJson(report, repoRoot, assistants, opts.llm);
-
-  // v2: LLM settings live in config.json.
+  writeConfigJson(report, repoRoot, assistants, opts.llm, opts.mcp);
 
   // MEMORY.md — v2 导航模板
   writeIfAllowed(

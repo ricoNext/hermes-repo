@@ -25,9 +25,8 @@ capture -> consolidate -> inject
 | Capability | Behavior |
 |------------|----------|
 | Assistant setup | `init` creates `.memory/`, merges `AGENTS.md`, and writes hook config for selected assistants |
-| Session capture | Stop hooks append session summaries to `.memory/captures/raw/session-*.md` |
+| Session capture | Stop hooks append raw session summaries to `.memory/captures/raw/session-*.md` |
 | Session injection | SessionStart hooks print `.memory/MEMORY.md` plus all `.memory/rules/*.md` content |
-| LLM capture upgrade | When LLM is configured, `capture-llm --flush` processes queued per-session upgrade jobs |
 | Consolidation | `flush` uses an OpenAI-compatible LLM to turn raw captures into knowledge files and `MEMORY.md` |
 | Auto flush | With complete LLM config, capture can trigger background `flush` when thresholds are met |
 | Multi-assistant support | Claude Code, Cursor, CodeBuddy, and OpenAI Codex adapters |
@@ -48,7 +47,7 @@ hermes-repo has two stages:
 | Stage | Commands | LLM required? |
 |-------|----------|---------------|
 | Capture & inject | `capture`, `inject` | No |
-| Consolidate | `flush`, `capture-llm`, `autoFlush` | Yes |
+| Consolidate | `flush`, `autoFlush` | Yes |
 
 `capture` only appends session transcripts to `.memory/captures/raw/`. That is raw evidence, not usable project memory.
 
@@ -121,7 +120,6 @@ Runtime:
   Stop -> hermes-repo capture
     resolves the current assistant transcript
     appends a section to captures/raw/session-{id}.md
-    optionally queues a background LLM upgrade job
     may schedule background flush when autoFlush thresholds are met
 
   Manual -> hermes-repo flush
@@ -141,7 +139,7 @@ Runtime:
 
 ## LLM Configuration
 
-Configure LLM to enable consolidation. `flush`, `capture-llm`, and `autoFlush` all depend on it.
+Configure LLM to enable consolidation. `flush` and `autoFlush` depend on it.
 
 hermes-repo uses an OpenAI-compatible Chat Completions endpoint:
 
@@ -154,8 +152,7 @@ hermes-repo uses an OpenAI-compatible Chat Completions endpoint:
     "model": "deepseek-v4-flash",
     "apiKey": "your-key",
     "timeoutMs": 60000,
-    "maxInputChars": 24000,
-    "mode": "async"
+    "maxInputChars": 24000
   },
   "consolidate": {
     "autoFlush": {
@@ -174,23 +171,46 @@ Important details:
 - `baseUrl` is the service root; hermes-repo calls `{baseUrl}/chat/completions`.
 - Native Anthropic or Gemini endpoints are not supported directly. Use a gateway that exposes an OpenAI-compatible endpoint.
 - `.memory/config.json` is gitignored because it may contain `apiKey`.
-- `consolidate.autoFlush.enabled` is on by default for new projects. With complete LLM config, captures can automatically trigger background `flush` after thresholds are met.
-- If you turn `autoFlush` off, run `npx @riconext/hermes-repo flush` manually after captures accumulate.
+- `consolidate.autoFlush.enabled` is on by default for new projects.
 
-Process queued capture upgrades manually:
+### Auto Flush
 
-```bash
-npx @riconext/hermes-repo capture-llm --flush
+With complete LLM config and `autoFlush.enabled: true`, editor hooks automatically run `flush --if-needed` after each capture. The `--if-needed` flag checks thresholds and only runs consolidation when needed:
+
+- Number of pending sessions >= `minPendingSessions` (default: 3)
+- Total pending characters >= `maxPendingChars` (default: 20000)
+- Time since last consolidation >= `minIntervalMinutes` (default: 30)
+
+Example generated hook config:
+
+```json
+// .claude/settings.local.json
+{
+  "hooks": {
+    "Stop": [
+      {
+        "hooks": [
+          {"type": "command", "command": "npx @riconext/hermes-repo capture"},
+          {"type": "command", "command": "npx @riconext/hermes-repo flush --if-needed"}
+        ]
+      }
+    ]
+  }
+}
 ```
+
+If thresholds are not met, `flush --if-needed` exits silently. This keeps editor sessions responsive while ensuring memory consolidation happens regularly.
+
+To disable auto flush, set `autoFlush.enabled: false` and run `npx @riconext/hermes-repo flush` manually when needed.
 
 ## Supported Assistants
 
 | Assistant | Setup written by `init` | Runtime behavior |
 |-----------|-------------------------|------------------|
-| Claude Code | `.claude/settings.local.json` | SessionStart inject, Stop capture |
-| Cursor | `.cursor/hooks.json` | sessionStart inject, stop capture |
-| CodeBuddy | `.codebuddy/settings.local.json` | SessionStart inject, Stop capture |
-| OpenAI Codex | `.codex/config.toml`, `.codex/hooks.json` | SessionStart inject, Stop capture |
+| Claude Code | `.claude/settings.local.json` | SessionStart inject, Stop capture + flush --if-needed |
+| Cursor | `.cursor/hooks.json` | sessionStart inject, stop capture + flush --if-needed |
+| CodeBuddy | `.codebuddy/settings.local.json` | SessionStart inject, Stop capture + flush --if-needed |
+| OpenAI Codex | `.codex/config.toml`, `.codex/hooks.json` | SessionStart inject, Stop capture + flush --if-needed |
 
 Default non-interactive assistant selection is `claude-code`.
 
@@ -200,7 +220,6 @@ Default non-interactive assistant selection is `claude-code`.
 npx @riconext/hermes-repo init [options]
 npx @riconext/hermes-repo capture [options]
 npx @riconext/hermes-repo inject [options]
-npx @riconext/hermes-repo capture-llm [options]
 npx @riconext/hermes-repo flush [options]
 ```
 
@@ -236,17 +255,6 @@ Options:
 - `-C, --cwd <dir>`
 - `--strict`
 
-### `capture-llm`
-
-Processes pending capture upgrade jobs.
-
-Options:
-
-- `-C, --cwd <dir>`
-- `--job <id>`
-- `--flush`
-- `--strict`
-
 ### `flush`
 
 Runs LLM consolidation over pending or stale raw session captures.
@@ -255,10 +263,13 @@ Options:
 
 - `-C, --cwd <dir>`
 - `--force`
+- `--if-needed` - only run if autoFlush thresholds are met
 - `--dry-run`
 - `--strict`
 
 If LLM is disabled or incomplete, `flush` exits successfully by default for hook safety but prints `LLM not enabled in config.json`. Use `--strict` when you want failures to produce a non-zero exit code.
+
+The `--if-needed` flag is designed for editor hooks - it checks autoFlush thresholds and exits silently if conditions are not met, keeping editor sessions responsive.
 
 ## Troubleshooting
 
