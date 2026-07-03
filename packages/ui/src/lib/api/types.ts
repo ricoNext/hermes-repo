@@ -1,5 +1,5 @@
 export type MemoryType = "NOTE" | "CONTEXT" | "PREFERENCE" | "SNIPPET";
-export type Visibility = "PRIVATE" | "SHARED" | "PUBLIC";
+export type MemoryStatus = "PENDING" | "ARCHIVED" | "TRASH";
 export type SystemRole = "SUPER_ADMIN" | "ADMIN" | "MEMBER";
 export type ProjectRole = "OWNER" | "ADMIN" | "MEMBER";
 
@@ -48,8 +48,9 @@ export interface Memory {
   title: string;
   content: string;
   type: MemoryType;
-  visibility: Visibility;
+  status: MemoryStatus;
   importance: number;
+  tags: string[];
   author: MemoryAuthor;
   createdAt: string;
   updatedAt: string;
@@ -58,5 +59,5 @@ export interface Memory {
 export interface SearchMemoriesParams {
   query?: string;
   type?: MemoryType;
-  visibility?: Visibility;
+  status?: MemoryStatus;
 }

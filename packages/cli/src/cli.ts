@@ -91,6 +91,7 @@ function main(): void {
     .option("--if-needed", "仅在满足 autoFlush 阈值时执行")
     .option("--dry-run", "仅预览，不写入")
     .option("--strict", "失败时 exit 1")
+    .option("--no-sync", "跳过 MCP 同步")
     .action(
       (options: {
         cwd?: string;
@@ -98,6 +99,7 @@ function main(): void {
         ifNeeded?: boolean;
         dryRun?: boolean;
         strict?: boolean;
+        noSync?: boolean;
       }) => {
         void runFlushCommandCli({
           cwd: options.cwd,
@@ -105,6 +107,7 @@ function main(): void {
           ifNeeded: options.ifNeeded,
           dryRun: options.dryRun,
           strict: options.strict,
+          noSync: options.noSync,
         });
       },
     );

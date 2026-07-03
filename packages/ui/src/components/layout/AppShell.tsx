@@ -38,8 +38,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <div className="flex min-h-full">
-      <aside className="flex w-56 shrink-0 flex-col border-r bg-muted/30">
+    <>
+      {/* 左侧边栏 - 固定高度 */}
+      <aside className="flex h-screen w-56 shrink-0 flex-col border-r bg-muted/30">
+        {/* 头部 Logo */}
         <div className="border-b px-4 py-5">
           <Link href="/projects" className="block">
             <span className="text-lg font-semibold tracking-tight">
@@ -50,7 +52,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             </span>
           </Link>
         </div>
-        <nav className="flex flex-1 flex-col gap-1 p-3">
+
+        {/* 导航区域 - 占据剩余空间 */}
+        <nav className="flex flex-1 flex-col gap-1 overflow-y-auto p-3">
           {navItems
             .filter((item) => item.visible(user?.systemRole))
             .map((item) => {
@@ -73,7 +77,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             );
           })}
         </nav>
-        <div className="border-t p-3">
+
+        {/* 用户信息 - 固定在底部 */}
+        <div className="mt-auto border-t p-3">
           {user ? (
             <div className="space-y-2">
               <div>
@@ -95,7 +101,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           ) : null}
         </div>
       </aside>
-      <main className="flex-1 overflow-auto">{children}</main>
-    </div>
+
+      {/* 主内容区域 - 占据剩余空间并可滚动 */}
+      <main className="flex-1 overflow-y-auto">{children}</main>
+    </>
   );
 }

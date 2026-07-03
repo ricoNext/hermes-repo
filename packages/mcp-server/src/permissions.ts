@@ -1,4 +1,4 @@
-import type { Visibility } from "@prisma/client";
+import type { MemoryScope } from "@prisma/client";
 import type { AuthUser } from "./auth.js";
 import { prisma } from "./db.js";
 
@@ -41,13 +41,13 @@ export async function checkMemoryPermission(
   });
 
   if (!userRole) {
-    return memory.visibility === "PUBLIC" && requiredRole === "read";
+    return memory.scope === "PUBLIC" && requiredRole === "read";
   }
 
-  switch (memory.visibility) {
-    case "PRIVATE":
+  switch (memory.scope) {
+    case "PERSONAL":
       return false;
-    case "SHARED":
+    case "TEAM":
       return userRole.role !== "MEMBER" || requiredRole === "read";
     case "PUBLIC":
       return true;
@@ -93,7 +93,7 @@ export async function checkProjectPermission(
 export async function canReadMemoryInProject(
   user: AuthUser,
   projectId: string,
-  visibility: Visibility,
+  scope: MemoryScope,
   authorId: string,
 ): Promise<boolean> {
   if (isSuperAdmin(user)) {
@@ -104,7 +104,7 @@ export async function canReadMemoryInProject(
     return true;
   }
 
-  if (visibility === "PUBLIC") {
+  if (scope === "PUBLIC") {
     return true;
   }
 
@@ -121,7 +121,7 @@ export async function canReadMemoryInProject(
     return false;
   }
 
-  if (visibility === "SHARED") {
+  if (scope === "TEAM") {
     return true;
   }
 

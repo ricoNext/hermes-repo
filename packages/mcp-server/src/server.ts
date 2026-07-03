@@ -16,7 +16,7 @@ import {
   deleteMemory,
   deleteProject,
   listProjects,
-  promoteMemory,
+  reviewMemory,
   searchMemories,
 } from "./services/memory.js";
 import {
@@ -139,15 +139,12 @@ function registerTools(server: FastMCP<SessionData>): void {
 
   server.addTool({
     name: "add_memory",
-    description: "在指定项目中创建一条团队记忆",
+    description: "在指定项目中创建一条记忆（默认状态：PENDING）",
     parameters: z.object({
       projectId: projectIdSchema,
       title: z.string().describe("记忆标题"),
       content: z.string().describe("记忆内容"),
       type: z.enum(["NOTE", "CONTEXT", "PREFERENCE", "SNIPPET"]),
-      visibility: z
-        .enum(["PRIVATE", "SHARED", "PUBLIC"])
-        .default("PRIVATE"),
       tags: z.array(z.string()).default([]),
       importance: z.number().min(1).max(5).default(1),
     }),
@@ -166,7 +163,7 @@ function registerTools(server: FastMCP<SessionData>): void {
 
   server.addTool({
     name: "search_memories",
-    description: "在指定项目中搜索团队记忆（关键词检索）",
+    description: "在指定项目中搜索记忆（关键词检索）",
     parameters: z.object({
       projectId: projectIdSchema,
       query: z.string().describe("搜索查询"),
@@ -175,7 +172,7 @@ function registerTools(server: FastMCP<SessionData>): void {
           type: z
             .enum(["NOTE", "CONTEXT", "PREFERENCE", "SNIPPET"])
             .optional(),
-          visibility: z.enum(["PRIVATE", "SHARED", "PUBLIC"]).optional(),
+          status: z.enum(["PENDING", "ARCHIVED", "TRASH"]).optional(),
           authorId: z.string().optional(),
           minImportance: z.number().min(1).max(5).optional(),
         })
@@ -206,18 +203,19 @@ function registerTools(server: FastMCP<SessionData>): void {
   });
 
   server.addTool({
-    name: "promote_memory",
-    description: "提升记忆的可见性级别",
+    name: "review_memory",
+    description: "审核记忆（管理员功能）",
     parameters: z.object({
       memoryId: z.string().describe("记忆 ID"),
-      newVisibility: z.enum(["SHARED", "PUBLIC"]).describe("新可见性"),
+      status: z.enum(["ARCHIVED", "TRASH"]).describe("审核结果"),
+      note: z.string().optional().describe("审核备注"),
     }),
     execute: async (args, context) => {
       const { user } = getSession(context);
-      await promoteMemory(user, args.memoryId, args.newVisibility);
+      await reviewMemory(user, args.memoryId, args.status, args.note);
       return JSON.stringify({
         success: true,
-        message: `记忆已升级为 ${args.newVisibility}`,
+        message: `记忆已${args.status === "ARCHIVED" ? "归档" : "移入垃圾桶"}`,
       });
     },
   });
@@ -434,22 +432,26 @@ function registerRoutes(server: FastMCP<SessionData>): void {
       c.req.query("q") ?? "",
       {
         type: (c.req.query("type") as never) || undefined,
-        visibility: (c.req.query("visibility") as never) || undefined,
+        status: (c.req.query("status") as never) || undefined,
       },
     );
     return c.json(memories);
   });
 
-  app.patch("/api/memories/:id/visibility", async (c) => {
+  app.patch("/api/memories/:id/review", async (c) => {
     const session = await resolveRestSession(c.req.raw.headers);
-    const body = await c.req.json<{ visibility?: "SHARED" | "PUBLIC" }>();
-    if (!body.visibility) {
-      return c.json({ error: "visibility is required" }, 400);
+    const body = await c.req.json<{
+      status?: "ARCHIVED" | "TRASH";
+      note?: string;
+    }>();
+    if (!body.status) {
+      return c.json({ error: "status is required" }, 400);
     }
-    const memory = await promoteMemory(
+    const memory = await reviewMemory(
       session.user,
       c.req.param("id"),
-      body.visibility,
+      body.status,
+      body.note,
     );
     return c.json(memory);
   });

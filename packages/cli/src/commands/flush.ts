@@ -1,5 +1,5 @@
 import { hookExit } from "../hookExit.js";
-import { runFlushCommand } from "../consolidate/scheduleConsolidate.js";
+import { runFlushCommandWithMCP } from "../consolidate/flushWithMCP.js";
 import type { ConsolidateResultV2 } from "../consolidate/runConsolidate.js";
 import { configureDebugLogging, debugLog } from "../config/debugLog.js";
 import { loadRepoContext } from "../config/readConfig.js";
@@ -10,6 +10,7 @@ export async function runFlushCommandCli(opts: {
   ifNeeded?: boolean;
   dryRun?: boolean;
   strict?: boolean;
+  noSync?: boolean; // 新增
 }): Promise<void> {
   const ctx = loadRepoContext(opts.cwd);
   const debug = ctx?.config.debug === true;
@@ -17,15 +18,15 @@ export async function runFlushCommandCli(opts: {
   debugLog(
     debug,
     "flush",
-    `start: force=${opts.force === true}, ifNeeded=${opts.ifNeeded === true}, dryRun=${opts.dryRun === true}`,
+    `start: force=${opts.force === true}, ifNeeded=${opts.ifNeeded === true}, dryRun=${opts.dryRun === true}, noSync=${opts.noSync === true}`,
   );
 
   try {
-    const result = await runFlushCommand({
+    const result = await runFlushCommandWithMCP({
       cwd: opts.cwd,
       force: opts.force,
-      ifNeeded: opts.ifNeeded,
       dryRun: opts.dryRun,
+      noSync: opts.noSync,
     });
     debugLog(
       debug,

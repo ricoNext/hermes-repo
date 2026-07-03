@@ -7,29 +7,31 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { Eye, Lock, MoreVertical, Trash2, Unlock } from "lucide-react";
-import type { Memory, Visibility } from "@/lib/api/types";
+import { Checkbox } from "@/components/ui/checkbox";
+import { CheckCircle, Edit, Eye, Trash2, XCircle } from "lucide-react";
+import type { Memory } from "@/lib/api/types";
 
 interface MemoryCardProps {
   memory: Memory;
-  onPromote: (newVisibility: Visibility) => void;
-  onDelete: () => void;
+  onArchive?: () => void;
+  onTrash?: () => void;
+  onDelete?: () => void;
+  onEdit?: () => void;
+  onPreview?: () => void;
+  readonly?: boolean;
+  selectable?: boolean;
+  selected?: boolean;
+  onSelect?: (selected: boolean) => void;
 }
 
-function getVisibilityIcon(visibility: Memory["visibility"]) {
-  switch (visibility) {
-    case "PRIVATE":
-      return <Lock className="h-4 w-4" />;
-    case "SHARED":
-      return <Unlock className="h-4 w-4" />;
-    case "PUBLIC":
-      return <Eye className="h-4 w-4" />;
+function getStatusBadge(status: Memory["status"]) {
+  switch (status) {
+    case "PENDING":
+      return { label: "待审核", variant: "secondary" as const };
+    case "ARCHIVED":
+      return { label: "已归档", variant: "default" as const };
+    case "TRASH":
+      return { label: "垃圾桶", variant: "destructive" as const };
   }
 }
 
@@ -46,58 +48,100 @@ function getTypeVariant(type: Memory["type"]) {
   }
 }
 
-export function MemoryCard({ memory, onPromote, onDelete }: MemoryCardProps) {
+export function MemoryCard({
+  memory,
+  onArchive,
+  onTrash,
+  onDelete,
+  onEdit,
+  onPreview,
+  readonly,
+  selectable,
+  selected,
+  onSelect,
+}: MemoryCardProps) {
+  const statusBadge = getStatusBadge(memory.status);
+
   return (
-    <Card>
+    <Card className="transition-shadow hover:shadow-md">
       <CardHeader>
-        <div className="flex items-start justify-between">
-          <div className="flex flex-wrap items-center gap-2">
-            {getVisibilityIcon(memory.visibility)}
-            <CardTitle className="text-lg">{memory.title}</CardTitle>
-            <Badge variant={getTypeVariant(memory.type)}>{memory.type}</Badge>
-            <Badge variant="outline">重要性: {memory.importance}</Badge>
-          </div>
-          <DropdownMenu>
-            <DropdownMenuTrigger
-              render={
-                <Button variant="ghost" size="sm">
-                  <MoreVertical className="h-4 w-4" />
-                </Button>
-              }
+        <div className="flex items-start gap-4">
+          {selectable && onSelect && (
+            <Checkbox
+              checked={selected}
+              onCheckedChange={onSelect}
+              className="mt-1"
             />
-            <DropdownMenuContent align="end">
-              {memory.visibility === "PRIVATE" ? (
+          )}
+
+          <div className="min-w-0 flex-1">
+            <CardTitle className="text-lg">{memory.title}</CardTitle>
+            <div className="mt-2 flex flex-wrap items-center gap-2">
+              <Badge variant={statusBadge.variant}>{statusBadge.label}</Badge>
+              <Badge variant={getTypeVariant(memory.type)}>{memory.type}</Badge>
+              <Badge variant="outline">重要性: {memory.importance}</Badge>
+              {memory.tags && memory.tags.length > 0 && (
                 <>
-                  <DropdownMenuItem onClick={() => onPromote("SHARED")}>
-                    <Eye className="mr-2 h-4 w-4" />
-                    升级为项目共享
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => onPromote("PUBLIC")}>
-                    <Eye className="mr-2 h-4 w-4" />
-                    升级为公开
-                  </DropdownMenuItem>
+                  {memory.tags.slice(0, 3).map((tag) => (
+                    <Badge key={tag} variant="outline" className="text-xs">
+                      {tag}
+                    </Badge>
+                  ))}
+                  {memory.tags.length > 3 && (
+                    <Badge variant="outline" className="text-xs">
+                      +{memory.tags.length - 3}
+                    </Badge>
+                  )}
                 </>
-              ) : null}
-              {memory.visibility === "SHARED" ? (
-                <DropdownMenuItem onClick={() => onPromote("PUBLIC")}>
-                  <Eye className="mr-2 h-4 w-4" />
-                  升级为公开
-                </DropdownMenuItem>
-              ) : null}
-              <DropdownMenuItem
-                onClick={onDelete}
-                className="text-destructive"
-              >
-                <Trash2 className="mr-2 h-4 w-4" />
-                删除
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+              )}
+            </div>
+          </div>
+
+          <div className="flex shrink-0 flex-wrap gap-2">
+            {onPreview && (
+              <Button size="sm" variant="ghost" onClick={onPreview}>
+                <Eye className="h-4 w-4" />
+              </Button>
+            )}
+
+            {onEdit && (
+              <Button size="sm" variant="ghost" onClick={onEdit}>
+                <Edit className="h-4 w-4" />
+              </Button>
+            )}
+
+            {!readonly && (onArchive || onTrash) && (
+              <>
+                {onArchive && (
+                  <Button size="sm" variant="default" onClick={onArchive}>
+                    <CheckCircle className="mr-1 h-4 w-4" />
+                    归档
+                  </Button>
+                )}
+                {onTrash && (
+                  <Button size="sm" variant="outline" onClick={onTrash}>
+                    <XCircle className="mr-1 h-4 w-4" />
+                    拒绝
+                  </Button>
+                )}
+              </>
+            )}
+
+            {!readonly && onDelete && (
+              <Button size="sm" variant="destructive" onClick={onDelete}>
+                <Trash2 className="h-4 w-4" />
+              </Button>
+            )}
+          </div>
         </div>
       </CardHeader>
+
       <CardContent>
-        <p className="mb-4 text-sm text-muted-foreground">{memory.content}</p>
-        <div className="flex items-center justify-between">
+        <p className="mb-4 line-clamp-3 whitespace-pre-wrap text-sm text-muted-foreground">
+          {memory.content}
+        </p>
+
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-2">
             <Avatar className="h-6 w-6">
               <AvatarImage src={memory.author.avatarUrl} />
@@ -108,7 +152,7 @@ export function MemoryCard({ memory, onPromote, onDelete }: MemoryCardProps) {
             </span>
           </div>
           <span className="text-xs text-muted-foreground">
-            {new Date(memory.updatedAt).toLocaleDateString()}
+            {new Date(memory.createdAt).toLocaleDateString()}
           </span>
         </div>
       </CardContent>

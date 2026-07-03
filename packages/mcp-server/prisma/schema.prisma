@@ -18,8 +18,9 @@ model User {
   createdAt    DateTime   @default(now())
   updatedAt    DateTime   @updatedAt
 
-  memories     Memory[]
-  projectRoles ProjectRole[]
+  memories        Memory[] @relation("author")
+  reviewedMemories Memory[] @relation("reviewer")
+  projectRoles    ProjectRole[]
 }
 
 model Project {
@@ -47,24 +48,30 @@ model ProjectRole {
 }
 
 model Memory {
-  id         String     @id @default(uuid())
+  id         String       @id @default(uuid())
   title      String
-  content    String     @db.Text
-  type       MemoryType @default(NOTE)
-  visibility Visibility @default(PRIVATE)
-  importance Int        @default(1)
+  content    String       @db.Text
+  type       MemoryType   @default(NOTE)
+  status     MemoryStatus @default(PENDING)
+  importance Int          @default(1)
   tags       String[]
-  createdAt  DateTime   @default(now())
-  updatedAt  DateTime   @updatedAt
+  createdAt  DateTime     @default(now())
+  updatedAt  DateTime     @updatedAt
+
+  // 审核相关
+  reviewerId String?
+  reviewer   User?     @relation("reviewer", fields: [reviewerId], references: [id])
+  reviewedAt DateTime?
+  reviewNote String?
 
   authorId  String
-  author    User    @relation(fields: [authorId], references: [id])
+  author    User    @relation("author", fields: [authorId], references: [id])
   projectId String
   project   Project @relation(fields: [projectId], references: [id])
 
-  @@index([projectId])
+  @@index([projectId, status])
+  @@index([status, createdAt])
   @@index([authorId])
-  @@index([visibility])
 }
 
 enum SystemRole {
@@ -86,8 +93,8 @@ enum MemoryType {
   SNIPPET
 }
 
-enum Visibility {
-  PRIVATE
-  SHARED
-  PUBLIC
+enum MemoryStatus {
+  PENDING
+  ARCHIVED
+  TRASH
 }

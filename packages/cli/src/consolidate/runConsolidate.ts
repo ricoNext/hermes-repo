@@ -37,6 +37,7 @@ export interface ConsolidateResultV2 {
   knowledgeUpdated: number;  // 更新知识文件数
   skippedCount: number;      // 跳过的 session 数
   archived: number;          // 归档的文件数
+  knowledgeFiles?: import("./llmConsolidateV2.js").KnowledgeFileOutput[]; // 新增：返回生成的知识文件
 }
 
 // ─── Main orchestrator ───────────────────────
@@ -236,6 +237,7 @@ export async function runConsolidate(
       knowledgeUpdated: writeResult.updated.length,
       skippedCount: llmResult.skippedSessions.length,
       archived,
+      knowledgeFiles: llmResult.knowledgeFiles, // 返回生成的知识文件
     };
   } finally {
     releaseConsolidateLock(repoRoot);

@@ -22,8 +22,24 @@ export interface ConsolidateConfig {
 
 export interface McpConfig {
   enabled: boolean;
-  serverUrl: string;
-  projectId?: string;
+  serverUrl?: string; // 旧字段，保留兼容
+  endpoint: string;
+  projectId: string;
+  apiKey: string;
+  sync: {
+    mode: 'auto' | 'manual' | 'off';
+    onFlush: {
+      push: boolean;
+      pull: boolean;
+    };
+    retries: number;
+    timeout: number;
+  };
+  deduplication: {
+    enabled: boolean;
+    strategy: 'team-first' | 'keep-both';
+    similarityThreshold: number;
+  };
 }
 
 export interface StorageConfig {

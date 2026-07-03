@@ -1,5 +1,5 @@
 import { apiFetch } from "./client";
-import type { Memory, SearchMemoriesParams, Visibility } from "./types";
+import type { Memory, MemoryStatus, SearchMemoriesParams } from "./types";
 
 export async function searchMemories(
   projectId: string,
@@ -8,7 +8,7 @@ export async function searchMemories(
   const search = new URLSearchParams();
   if (params.query) search.set("q", params.query);
   if (params.type) search.set("type", params.type);
-  if (params.visibility) search.set("visibility", params.visibility);
+  if (params.status) search.set("status", params.status);
 
   const query = search.toString();
   return apiFetch<Memory[]>(`/api/memories${query ? `?${query}` : ""}`, {
@@ -16,16 +16,40 @@ export async function searchMemories(
   });
 }
 
-export async function promoteMemory(
+export async function updateMemory(
   projectId: string,
   memoryId: string,
-  newVisibility: Visibility,
-): Promise<void> {
-  await apiFetch<void>(`/api/memories/${memoryId}/visibility`, {
+  updates: Partial<Memory>,
+): Promise<Memory> {
+  return apiFetch<Memory>(`/api/memories/${memoryId}`, {
     method: "PATCH",
-    body: JSON.stringify({ visibility: newVisibility }),
+    body: JSON.stringify(updates),
     projectId,
   });
+}
+
+export async function reviewMemory(
+  projectId: string,
+  memoryId: string,
+  status: "ARCHIVED" | "TRASH",
+  note?: string,
+): Promise<void> {
+  await apiFetch<void>(`/api/memories/${memoryId}/review`, {
+    method: "PATCH",
+    body: JSON.stringify({ status, note }),
+    projectId,
+  });
+}
+
+export async function batchReviewMemories(
+  projectId: string,
+  memoryIds: string[],
+  status: "ARCHIVED" | "TRASH",
+  note?: string,
+): Promise<void> {
+  await Promise.all(
+    memoryIds.map((id) => reviewMemory(projectId, id, status, note))
+  );
 }
 
 export async function deleteMemory(

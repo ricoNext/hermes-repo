@@ -8,7 +8,9 @@ export default function DashboardLayout({
 }) {
   return (
     <AuthGuard>
-      <AppShell>{children}</AppShell>
+      <div className="flex h-screen overflow-hidden">
+        <AppShell>{children}</AppShell>
+      </div>
     </AuthGuard>
   );
 }

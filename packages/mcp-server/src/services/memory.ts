@@ -1,14 +1,13 @@
 import type {
   MemoryType,
+  MemoryStatus,
   Prisma,
   Project,
-  Visibility,
 } from "@prisma/client";
 import type { AuthUser } from "../auth.js";
 import { HttpError } from "../http-error.js";
 import { prisma } from "../db.js";
 import {
-  canReadMemoryInProject,
   checkMemoryPermission,
   checkProjectPermission,
   isSuperAdmin,
@@ -19,14 +18,13 @@ export interface CreateMemoryInput {
   title: string;
   content: string;
   type: MemoryType;
-  visibility?: Visibility;
   tags?: string[];
   importance?: number;
 }
 
 export interface SearchMemoryFilters {
   type?: MemoryType;
-  visibility?: Visibility;
+  status?: MemoryStatus;
   authorId?: string;
   minImportance?: number;
 }
@@ -36,7 +34,7 @@ export interface MemoryView {
   title: string;
   content: string;
   type: MemoryType;
-  visibility: Visibility;
+  status: MemoryStatus;
   importance: number;
   tags: string[];
   author: {
@@ -56,7 +54,7 @@ function toMemoryView(
     title: memory.title,
     content: memory.content,
     type: memory.type,
-    visibility: memory.visibility,
+    status: memory.status,
     importance: memory.importance,
     tags: memory.tags,
     author: {
@@ -143,7 +141,7 @@ export async function addMemory(
       title: input.title,
       content: input.content,
       type: input.type,
-      visibility: input.visibility ?? "PRIVATE",
+      status: "PENDING",
       tags: input.tags ?? [],
       importance: input.importance ?? 1,
       authorId: user.id,
@@ -169,7 +167,7 @@ export async function searchMemories(
     where: {
       projectId,
       ...(filters.type ? { type: filters.type } : {}),
-      ...(filters.visibility ? { visibility: filters.visibility } : {}),
+      ...(filters.status ? { status: filters.status } : {}),
       ...(filters.authorId ? { authorId: filters.authorId } : {}),
       ...(filters.minImportance
         ? { importance: { gte: filters.minImportance } }
@@ -188,42 +186,32 @@ export async function searchMemories(
     take: limit,
   });
 
-  const visible: MemoryView[] = [];
-  for (const memory of memories) {
-    const canRead = await canReadMemoryInProject(
-      user,
-      projectId,
-      memory.visibility,
-      memory.authorId,
-    );
-    if (canRead) {
-      visible.push(toMemoryView(memory));
-    }
-  }
-
-  return visible;
+  return memories.map(toMemoryView);
 }
 
-export async function promoteMemory(
+export async function reviewMemory(
   user: AuthUser,
   memoryId: string,
-  newVisibility: Extract<Visibility, "SHARED" | "PUBLIC">,
+  newStatus: "ARCHIVED" | "TRASH",
+  reviewNote?: string,
 ) {
+  if (!isUserManager(user)) {
+    throw new HttpError(403, "仅管理员可审核记忆");
+  }
+
   const memory = await prisma.memory.findUnique({ where: { id: memoryId } });
   if (!memory) {
     throw new HttpError(404, "记忆不存在");
   }
 
-  if (memory.authorId !== user.id) {
-    const allowed = await checkMemoryPermission(user, memoryId, "write");
-    if (!allowed) {
-      throw new HttpError(403, "无权限修改此记忆的可见性");
-    }
-  }
-
   return prisma.memory.update({
     where: { id: memoryId },
-    data: { visibility: newVisibility },
+    data: {
+      status: newStatus,
+      reviewerId: user.id,
+      reviewedAt: new Date(),
+      reviewNote,
+    },
     include: { author: true },
   });
 }
