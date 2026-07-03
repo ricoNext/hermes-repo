@@ -1,5 +1,35 @@
 # Changelog
 
+## 1.3.3
+
+### Minor Changes
+
+- feat: 实现记忆生命周期重构和 MCP 同步功能
+
+  **数据模型重构：**
+  - 将 `MemoryScope` (PERSONAL/TEAM/PUBLIC) 重构为 `MemoryStatus` (PENDING/ARCHIVED/TRASH)
+  - 添加审核流程：记忆从 PENDING → ARCHIVED（通过）或 TRASH（拒绝）
+  - 添加审核字段：reviewerId, reviewedAt, reviewNote
+
+  **CLI MCP 同步：**
+  - 新增 `flush` 命令 MCP 同步功能（4 步流程）
+    1. LLM 整理原始记忆
+    2. 推送到 MCP 服务（状态：PENDING）
+    3. 拉取团队记忆（状态：ARCHIVED）
+    4. 更新 MEMORY.md（去重，团队优先）
+  - 新增 `--no-sync` 选项跳过 MCP 同步
+  - 实现智能去重：标题相似度、类型匹配、标签重叠
+  - 团队记忆优先策略
+
+  **配置增强：**
+  - 扩展 `mcp` 配置项：endpoint, projectId, apiKey, sync, deduplication
+  - 支持自动模式（auto）、手动模式（manual）、关闭模式（off）
+  - 可配置推送/拉取行为和去重策略
+
+  **文档更新：**
+  - 新增 `IMPLEMENTATION_SUMMARY.md` 实施总结文档
+  - 包含完整的测试步骤和配置说明
+
 ## 1.3.2
 
 ### Patch Changes
