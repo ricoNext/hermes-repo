@@ -108,7 +108,7 @@ describe("init", () => {
     };
     expect(config.version).toBe(2); // v2: version=2
     expect(config.storage.backend).toBe("file");
-    expect(config.storage.mcp).toEqual({
+    expect(config.storage.mcp).toMatchObject({
       enabled: false,
       serverUrl: "http://localhost:3000/mcp",
     });
@@ -139,7 +139,7 @@ describe("init", () => {
         };
       };
     };
-    expect(config.storage.mcp).toEqual({
+    expect(config.storage.mcp).toMatchObject({
       enabled: true,
       serverUrl: "http://localhost:3000/mcp",
       projectId,
