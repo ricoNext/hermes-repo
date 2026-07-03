@@ -1,4 +1,4 @@
-import type { MemoryScope } from "@prisma/client";
+import type { MemoryStatus } from "@prisma/client";
 import type { AuthUser } from "./auth.js";
 import { prisma } from "./db.js";
 
@@ -41,16 +41,21 @@ export async function checkMemoryPermission(
   });
 
   if (!userRole) {
-    return memory.scope === "PUBLIC" && requiredRole === "read";
+    return false;
   }
 
-  switch (memory.scope) {
-    case "PERSONAL":
-      return false;
-    case "TEAM":
-      return userRole.role !== "MEMBER" || requiredRole === "read";
-    case "PUBLIC":
-      return true;
+  // 基于 status 的权限判断
+  switch (memory.status) {
+    case "PENDING":
+      // 待审核记忆：仅管理员可操作
+      return userRole.role === "ADMIN" || userRole.role === "OWNER";
+    case "ARCHIVED":
+      // 已归档记忆：所有项目成员可读，管理员可写
+      if (requiredRole === "read") return true;
+      return userRole.role === "ADMIN" || userRole.role === "OWNER";
+    case "TRASH":
+      // 垃圾桶记忆：仅管理员可操作
+      return userRole.role === "ADMIN" || userRole.role === "OWNER";
     default:
       return false;
   }
@@ -93,7 +98,7 @@ export async function checkProjectPermission(
 export async function canReadMemoryInProject(
   user: AuthUser,
   projectId: string,
-  scope: MemoryScope,
+  status: MemoryStatus,
   authorId: string,
 ): Promise<boolean> {
   if (isSuperAdmin(user)) {
@@ -104,10 +109,20 @@ export async function canReadMemoryInProject(
     return true;
   }
 
-  if (scope === "PUBLIC") {
-    return true;
+  // 已归档记忆所有项目成员可见
+  if (status === "ARCHIVED") {
+    const userRole = await prisma.projectRole.findUnique({
+      where: {
+        userId_projectId: {
+          userId: user.id,
+          projectId,
+        },
+      },
+    });
+    return !!userRole;
   }
 
+  // 待审核和垃圾桶记忆仅管理员可见
   const userRole = await prisma.projectRole.findUnique({
     where: {
       userId_projectId: {
@@ -121,9 +136,5 @@ export async function canReadMemoryInProject(
     return false;
   }
 
-  if (scope === "TEAM") {
-    return true;
-  }
-
-  return false;
+  return userRole.role === "ADMIN" || userRole.role === "OWNER";
 }

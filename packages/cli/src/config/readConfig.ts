@@ -84,16 +84,47 @@ function parseMcpConfig(raw: Record<string, unknown>): McpConfig {
       ? (storage.mcp as Record<string, unknown>)
       : {};
 
+  const enabled = mcp.enabled === true;
+  const serverUrl = typeof mcp.serverUrl === "string" && mcp.serverUrl.trim()
+    ? mcp.serverUrl.trim()
+    : DEFAULT_MCP_SERVER_URL;
+  const endpoint = typeof mcp.endpoint === "string" && mcp.endpoint.trim()
+    ? mcp.endpoint.trim()
+    : serverUrl; // 兼容旧配置
+  const projectId = typeof mcp.projectId === "string" && mcp.projectId.trim()
+    ? mcp.projectId.trim()
+    : "";
+  const apiKey = typeof mcp.apiKey === "string" && mcp.apiKey.trim()
+    ? mcp.apiKey.trim()
+    : "";
+
+  // 解析 sync 配置
+  const syncConfig = mcp.sync && typeof mcp.sync === "object" ? mcp.sync as Record<string, unknown> : {};
+  const onFlush = syncConfig.onFlush && typeof syncConfig.onFlush === "object" ? syncConfig.onFlush as Record<string, unknown> : {};
+
+  // 解析 deduplication 配置
+  const dedupConfig = mcp.deduplication && typeof mcp.deduplication === "object" ? mcp.deduplication as Record<string, unknown> : {};
+
   return {
-    enabled: mcp.enabled === true,
-    serverUrl:
-      typeof mcp.serverUrl === "string" && mcp.serverUrl.trim()
-        ? mcp.serverUrl.trim()
-        : DEFAULT_MCP_SERVER_URL,
-    projectId:
-      typeof mcp.projectId === "string" && mcp.projectId.trim()
-        ? mcp.projectId.trim()
-        : undefined,
+    enabled,
+    serverUrl, // 保留兼容
+    endpoint,
+    projectId,
+    apiKey,
+    sync: {
+      mode: syncConfig.mode === "manual" || syncConfig.mode === "off" ? syncConfig.mode : "auto",
+      onFlush: {
+        push: onFlush.push !== false,
+        pull: onFlush.pull !== false,
+      },
+      retries: typeof syncConfig.retries === "number" ? syncConfig.retries : 3,
+      timeout: typeof syncConfig.timeout === "number" ? syncConfig.timeout : 30000,
+    },
+    deduplication: {
+      enabled: dedupConfig.enabled !== false,
+      strategy: dedupConfig.strategy === "keep-both" ? "keep-both" : "team-first",
+      similarityThreshold: typeof dedupConfig.similarityThreshold === "number" ? dedupConfig.similarityThreshold : 0.9,
+    },
   };
 }
 

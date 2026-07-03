@@ -42,7 +42,7 @@ export function createMCPClient(config: {
         throw new Error(`MCP API error: ${res.status} ${text}`);
       }
 
-      return res.json();
+      return res.json() as Promise<{ memoryId: string }>;
     },
 
     async searchMemories(params) {
@@ -63,7 +63,7 @@ export function createMCPClient(config: {
         throw new Error(`MCP API error: ${res.status}`);
       }
 
-      return res.json();
+      return res.json() as Promise<TeamMemory[]>;
     },
   };
 }
