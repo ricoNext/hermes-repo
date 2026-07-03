@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.3.2
+
+### Patch Changes
+
+- chore: 调整版本号到 1.3.2 以触发自动发布流程
+
 ## 1.3.1
 
 ### Patch Changes
