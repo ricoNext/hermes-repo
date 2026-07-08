@@ -5,6 +5,7 @@ import type { ConsolidateResultV2 } from "./runConsolidate.js";
 import { pushToMCP, pullFromMCP, writeTeamMemories } from "../mcp/sync.js";
 import { detectDuplicates, scanLocalMemories } from "../mcp/dedup.js";
 import { generateMemoryIndex } from "../mcp/generateIndex.js";
+import type { TeamMemory } from "../mcp/types.js";
 
 export interface FlushCommandOptions {
   cwd?: string;
@@ -36,14 +37,43 @@ export async function runFlushCommandWithMCP(
   const debug = ctx.config.debug === true;
   console.log('开始整理记忆...\n');
 
-  // ────────── 步骤 1: LLM 整理 ──────────
-  console.log('1/4 正在调用 LLM 整理原始记忆...');
+  const mcpEnabled =
+    ctx.config.storage?.mcp?.enabled &&
+    ctx.config.storage?.mcp?.sync?.mode !== 'off' &&
+    !opts.noSync;
+
+  // ────────── 步骤 1: 拉取团队记忆（前置）──────────
+  let teamMemories: TeamMemory[] = [];
+
+  if (mcpEnabled && ctx.config.storage?.mcp?.sync?.onFlush?.pull) {
+    console.log('1/4 正在拉取团队记忆...');
+    try {
+      teamMemories = await pullFromMCP(ctx);
+      writeTeamMemories(ctx.repoRoot, teamMemories);
+      console.log(`✓ 拉取了 ${teamMemories.length} 条团队记忆\n`);
+    } catch (err) {
+      console.warn(
+        '⚠ 拉取失败:',
+        err instanceof Error ? err.message : err
+      );
+      console.log();
+    }
+  } else {
+    console.log('1/4 跳过拉取团队记忆\n');
+  }
+
+  // ────────── 步骤 2: LLM 整理（能看到团队记忆）──────────
+  console.log('2/4 正在调用 LLM 整理原始记忆...');
   const result = await runConsolidate({
     repoRoot: ctx.repoRoot,
     config: ctx.config,
     force: opts.force,
     dryRun: opts.dryRun,
     debug,
+    existingMemories: {
+      team: teamMemories,
+      local: scanLocalMemories(ctx.repoRoot),
+    },
   });
 
   if (!result.ran) {
@@ -60,14 +90,9 @@ export async function runFlushCommandWithMCP(
     `✓ 生成了 ${result.knowledgeCreated} 个知识文件，更新了 ${result.knowledgeUpdated} 个\n`
   );
 
-  const mcpEnabled =
-    ctx.config.storage?.mcp?.enabled &&
-    ctx.config.storage?.mcp?.sync?.mode !== 'off' &&
-    !opts.noSync;
-
-  // ────────── 步骤 2: 推送到 MCP ──────────
+  // ────────── 步骤 3: 推送新记忆到 MCP ──────────
   if (mcpEnabled && ctx.config.storage?.mcp?.sync?.onFlush?.push && result.knowledgeFiles) {
-    console.log('2/4 正在推送记忆到 MCP...');
+    console.log('3/4 正在推送记忆到 MCP...');
     try {
       const pushed = await pushToMCP(ctx, result.knowledgeFiles);
       console.log(`✓ 推送了 ${pushed} 条记忆（状态：待审核）\n`);
@@ -79,53 +104,34 @@ export async function runFlushCommandWithMCP(
       console.log();
     }
   } else {
-    console.log('2/4 跳过推送\n');
+    console.log('3/4 跳过推送\n');
   }
 
-  // ────────── 步骤 3: 拉取团队记忆 ──────────
-  let duplicates = new Map<string, string>();
-
-  if (mcpEnabled && ctx.config.storage?.mcp?.sync?.onFlush?.pull) {
-    console.log('3/4 正在拉取团队记忆...');
-    try {
-      const teamMemories = await pullFromMCP(ctx);
-      writeTeamMemories(ctx.repoRoot, teamMemories);
-
-      const localMemories = scanLocalMemories(ctx.repoRoot);
-      duplicates = detectDuplicates(localMemories, teamMemories);
-
-      console.log(`✓ 拉取了 ${teamMemories.length} 条团队记忆`);
-      if (duplicates.size > 0) {
-        console.log(
-          `✓ 检测到 ${duplicates.size} 条重复，已使用团队版本`
-        );
-      }
-      console.log();
-    } catch (err) {
-      console.warn(
-        '⚠ 拉取失败:',
-        err instanceof Error ? err.message : err
-      );
-      console.log();
-    }
-  } else {
-    console.log('3/4 跳过拉取\n');
-  }
-
-  // ────────── 步骤 4: 生成 MEMORY.md ──────────
+  // ────────── 步骤 4: 更新 MEMORY.md ──────────
   console.log('4/4 正在更新 MEMORY.md...');
-  await generateMemoryIndex(ctx, duplicates);
-  console.log('✓ MEMORY.md 已更新\n');
+
+  if (result.memoryIndex) {
+    // LLM 已生成索引，直接写入
+    const { writeFileSync } = await import('node:fs');
+    const { join } = await import('node:path');
+    const memoryMdPath = join(ctx.repoRoot, '.memory', 'MEMORY.md');
+    writeFileSync(memoryMdPath, result.memoryIndex, 'utf8');
+    console.log('✓ MEMORY.md 已更新（LLM 生成）\n');
+  } else {
+    // 降级方案：扫描生成
+    const localMemories = scanLocalMemories(ctx.repoRoot);
+    const duplicates = detectDuplicates(localMemories, teamMemories);
+    await generateMemoryIndex(ctx, duplicates);
+    console.log('✓ MEMORY.md 已更新（扫描生成）\n');
+  }
 
   console.log('🎉 完成！记忆已整理并同步');
 
   // 统计信息
-  const localCount = scanLocalMemories(ctx.repoRoot).length - duplicates.size;
+  const localCount = scanLocalMemories(ctx.repoRoot).length;
   console.log(`\n记忆统计:`);
   console.log(`  本地记忆: ${localCount} 条`);
-  if (duplicates.size > 0) {
-    console.log(`  团队记忆: ${duplicates.size} 条`);
-  }
+  console.log(`  团队记忆: ${teamMemories.length} 条`);
 
   return result;
 }

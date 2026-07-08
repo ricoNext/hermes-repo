@@ -27,6 +27,30 @@ export interface RunConsolidateOptions {
   force?: boolean;
   dryRun?: boolean;
   debug?: boolean;
+  existingMemories?: {
+    team: Array<{
+      id: string;
+      title: string;
+      content: string;
+      type: string;
+      tags: string[];
+      importance: number;
+      author: {
+        id: string;
+        name: string;
+        avatarUrl: string | null;
+      };
+      createdAt: string;
+      updatedAt: string;
+    }>;
+    local: Array<{
+      path: string;
+      title: string;
+      type: string;
+      summary: string;
+      id?: string;
+    }>;
+  };
 }
 
 export interface ConsolidateResultV2 {
@@ -38,6 +62,7 @@ export interface ConsolidateResultV2 {
   skippedCount: number;      // 跳过的 session 数
   archived: number;          // 归档的文件数
   knowledgeFiles?: import("./llmConsolidateV2.js").KnowledgeFileOutput[]; // 新增：返回生成的知识文件
+  memoryIndex?: string;      // 新增：LLM 生成的 MEMORY.md 内容
 }
 
 // ─── Main orchestrator ───────────────────────
@@ -124,7 +149,11 @@ export async function runConsolidate(
     }
 
     // Step 2: 构造 LLM 输入
-    const llmInput = buildLlmConsolidateInput(repoRoot, pendingSessions);
+    const llmInput = buildLlmConsolidateInput(
+      repoRoot,
+      pendingSessions,
+      opts.existingMemories
+    );
     debugLog(
       debug === true,
       "consolidate",
@@ -238,6 +267,7 @@ export async function runConsolidate(
       skippedCount: llmResult.skippedSessions.length,
       archived,
       knowledgeFiles: llmResult.knowledgeFiles, // 返回生成的知识文件
+      memoryIndex: llmResult.memoryMd, // 返回 LLM 生成的 MEMORY.md
     };
   } finally {
     releaseConsolidateLock(repoRoot);

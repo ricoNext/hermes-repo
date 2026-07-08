@@ -13,7 +13,8 @@
   },
   "scripts": {
     "build": "bun run --filter '@riconext/hermes-repo' build && bun run --filter '@riconext/hermes-mcp-server' build && bun run --filter '@riconext/hermes-ui' build",
-    "dev": "bun run --filter '@riconext/hermes-repo' dev",
+    "dev": "bun run --parallel dev:ui dev:mcp",
+    "dev:cli": "bun run --filter '@riconext/hermes-repo' dev",
     "dev:ui": "bun run --filter '@riconext/hermes-ui' dev",
     "dev:mcp": "bun run --filter '@riconext/hermes-mcp-server' dev",
     "test": "bun run --filter '@riconext/hermes-repo' test",

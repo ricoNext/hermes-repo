@@ -2,11 +2,13 @@ import { readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import type { TeamMemory } from './types.js';
 
-interface LocalMemory {
+export interface LocalMemory {
   path: string;
   title: string;
   type: string;
   tags: string[];
+  summary: string;
+  id?: string;
 }
 
 export function detectDuplicates(
@@ -114,11 +116,17 @@ export function scanLocalMemories(repoRoot: string): LocalMemory[] {
           const content = readFileSync(fullPath, 'utf8');
           const fm = parseFrontmatter(content);
 
+          // 提取摘要（从正文开头）
+          const body = content.replace(/^---\n[\s\S]*?\n---\n/, '');
+          const summary = body.slice(0, 100).trim().replace(/\n/g, ' ') + '...';
+
           memories.push({
             path: relativePath,
             title: fm.title || file.name.replace('.md', ''),
             type: dir,
             tags: fm.tags || [],
+            summary,
+            id: fm.id,
           });
         }
       }

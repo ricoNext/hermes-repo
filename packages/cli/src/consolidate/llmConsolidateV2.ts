@@ -20,6 +20,21 @@ export interface LlmConsolidateInput {
   pendingSessions: PendingSessionInput[];
   existingKnowledge: ExistingKnowledge[];
   currentMemoryMd: string | null;
+  teamMemories?: Array<{
+    id: string;
+    title: string;
+    content: string;
+    type: string;
+    tags: string[];
+    importance: number;
+    author: {
+      id: string;
+      name: string;
+      avatarUrl: string | null;
+    };
+    createdAt: string;
+    updatedAt: string;
+  }>;
 }
 
 export interface PendingSessionInput {
@@ -54,10 +69,12 @@ const CONSOLIDATE_SYSTEM_PROMPT = `你是一个项目知识整理专家。你的
 - 讨论了哪些业务领域（模块、子系统、功能）
 - 产生了哪类知识（规范、事实、流程、决策、踩坑）
 - 哪些内容有长期保留价值，哪些是临时噪音
+- **重要**：检查 teamMemories（团队记忆），避免创建重复的知识
 
 ### 第二步：域识别与匹配
 为每条有价值的内容确定所属业务域：
 - 查看 existingKnowledge 中已有的域列表
+- **检查 teamMemories 中已记录的域和内容**
 - 优先复用已有域，只有确实无法匹配时才新建域
 - 无法归类的放入 general 域
 - 域名用 kebab-case，简洁明了（如 quoted, inventory, payment）
@@ -89,6 +106,7 @@ const CONSOLIDATE_SYSTEM_PROMPT = `你是一个项目知识整理专家。你的
 3. 用结构化的 markdown 组织（标题、列表、表格、代码块）
 4. 区分"事实"和"推断"，对不确定的内容标注 confidence: low
 5. 保留足够的上下文让未来阅读者理解背景
+6. **避免与 teamMemories 中的内容重复**：如果团队已记录类似知识，可引用团队记忆而不是重复创建
 
 如果是更新已有文件（action=update）：
 - 对比新旧内容，保留仍有效的部分
@@ -107,6 +125,7 @@ const CONSOLIDATE_SYSTEM_PROMPT = `你是一个项目知识整理专家。你的
 5. 每个摘要控制在 20 字以内
 6. 整体保持紧凑（目标 < 100 行），AI 注入时不会太长
 7. 保留用户的自定义编辑标记 <!-- user-edit-start --> ... <!-- user-edit-end -->
+8. **如果有 teamMemories，在顶部添加"团队知识"部分**，简要列出团队记忆的标题和类型
 
 ## 输出要求
 - 输出严格 JSON 格式
@@ -215,6 +234,30 @@ function scanMarkdownDirectory(
 export function buildLlmConsolidateInput(
   repoRoot: string,
   sessions: ScannedSession[],
+  existingMemories?: {
+    team: Array<{
+      id: string;
+      title: string;
+      content: string;
+      type: string;
+      tags: string[];
+      importance: number;
+      author: {
+        id: string;
+        name: string;
+        avatarUrl: string | null;
+      };
+      createdAt: string;
+      updatedAt: string;
+    }>;
+    local: Array<{
+      path: string;
+      title: string;
+      type: string;
+      summary: string;
+      id?: string;
+    }>;
+  }
 ): LlmConsolidateInput {
   const pendingSessions: PendingSessionInput[] = sessions.map((s) => ({
     sessionId: s.sessionId,
@@ -239,6 +282,7 @@ export function buildLlmConsolidateInput(
     pendingSessions,
     existingKnowledge,
     currentMemoryMd,
+    teamMemories: existingMemories?.team,
   };
 }
 
@@ -379,22 +423,34 @@ function formatUserMessage(input: LlmConsolidateInput): string {
         : s.content,
   }));
 
-  return JSON.stringify(
-    {
-      pendingSessions: truncatedSessions,
-      existingKnowledge: input.existingKnowledge.map((k) => ({
-        path: k.path,
-        title: k.title,
-        type: k.type,
-        domain: k.domain,
-        status: k.status,
-        summary: k.summary,
-      })),
-      currentMemoryMd: input.currentMemoryMd ?? "",
-    },
-    null,
-    2,
-  );
+  const payload: Record<string, unknown> = {
+    pendingSessions: truncatedSessions,
+    existingKnowledge: input.existingKnowledge.map((k) => ({
+      path: k.path,
+      title: k.title,
+      type: k.type,
+      domain: k.domain,
+      status: k.status,
+      summary: k.summary,
+    })),
+    currentMemoryMd: input.currentMemoryMd ?? "",
+  };
+
+  // 添加团队记忆（如果有）
+  if (input.teamMemories && input.teamMemories.length > 0) {
+    payload.teamMemories = input.teamMemories.map((m) => ({
+      id: m.id,
+      title: m.title,
+      content: m.content.slice(0, 500), // 截断内容，只保留摘要
+      type: m.type,
+      tags: m.tags,
+      importance: m.importance,
+      author: m.author.name,
+      createdAt: m.createdAt,
+    }));
+  }
+
+  return JSON.stringify(payload, null, 2);
 }
 
 // ─── 验证 & 标准化 LLM 返回结果 ───────────────
