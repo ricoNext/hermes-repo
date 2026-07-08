@@ -162,7 +162,7 @@ describe("runConsolidate (v2)", () => {
     expect(typeof result.ran).toBe("boolean");
   });
 
-  it("writes MEMORY.md only when linked knowledge files exist", async () => {
+  it("returns memoryIndex when linked knowledge files exist", async () => {
     const dir = makeV2Repo({ llm: llmConfig() });
     writePendingSession(dir, "sess-ok", "Canvas interaction rule.");
     mockLlmResult({
@@ -192,7 +192,8 @@ describe("runConsolidate (v2)", () => {
 
     expect(result.ran).toBe(true);
     expect(existsSync(join(dir, ".memory", "domains", "canvas", "canvas-interaction.md"))).toBe(true);
-    expect(readFileSync(join(dir, ".memory", "MEMORY.md"), "utf8")).toContain(
+    // runConsolidate 不再直接写入 MEMORY.md，而是通过 memoryIndex 返回
+    expect(result.memoryIndex).toContain(
       "domains/canvas/canvas-interaction.md",
     );
   });
