@@ -68,7 +68,7 @@ function main(): void {
           tools: options.tools,
           mcpProjectId: options.mcpProjectId,
           mcpServerUrl: options.mcpServerUrl,
-          mcpApiKey: options.mcpApiKey,
+          mcpUserId: options.mcpApiKey,
         });
       },
     );

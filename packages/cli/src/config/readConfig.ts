@@ -91,8 +91,8 @@ function parseMcpConfig(raw: Record<string, unknown>): McpConfig {
   const projectId = typeof mcp.projectId === "string" && mcp.projectId.trim()
     ? mcp.projectId.trim()
     : "";
-  const apiKey = typeof mcp.apiKey === "string" && mcp.apiKey.trim()
-    ? mcp.apiKey.trim()
+  const userId = typeof mcp.userId === "string" && mcp.userId.trim()
+    ? mcp.userId.trim()
     : "";
 
   // 解析 sync 配置
@@ -106,7 +106,7 @@ function parseMcpConfig(raw: Record<string, unknown>): McpConfig {
     enabled,
     serverUrl,
     projectId,
-    apiKey,
+    userId,
     sync: {
       mode: syncConfig.mode === "manual" || syncConfig.mode === "off" ? syncConfig.mode : "auto",
       onFlush: {
