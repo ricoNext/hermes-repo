@@ -163,14 +163,21 @@ async function gatherMcpOptions(
     message: existingApiKey
       ? "MCP API Key（用于推送记忆时关联用户，留空则保留现有 key）"
       : "MCP API Key（用于推送记忆时关联用户）",
-    default: "",
+    default: existingApiKey,
+    validate: (value) => {
+      const trimmed = value.trim();
+      if (!trimmed && !existingApiKey) {
+        return "apiKey 不能为空";
+      }
+      return true;
+    },
   });
 
   return {
     enabled: true,
     serverUrl: serverUrl.trim(),
     projectId: projectId.trim(),
-    apiKey: apiKey.trim() || existingApiKey,
+    apiKey: apiKey.trim(),
   };
 }
 
