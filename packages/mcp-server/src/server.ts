@@ -438,6 +438,31 @@ function registerRoutes(server: FastMCP<SessionData>): void {
     return c.json(memories);
   });
 
+  app.post("/api/memories", async (c) => {
+    const session = await resolveRestSession(c.req.raw.headers);
+    const body = await c.req.json<{
+      title?: string;
+      content?: string;
+      type?: "NOTE" | "CONTEXT" | "PREFERENCE" | "SNIPPET";
+      tags?: string[];
+      importance?: number;
+    }>();
+
+    if (!body.title?.trim() || !body.content) {
+      return c.json({ error: "title and content are required" }, 400);
+    }
+
+    const memory = await addMemory(session.user, session.projectId, {
+      title: body.title.trim(),
+      content: body.content,
+      type: body.type ?? "NOTE",
+      tags: body.tags ?? [],
+      importance: body.importance ?? 1,
+    });
+
+    return c.json({ memoryId: memory.id }, 201);
+  });
+
   app.patch("/api/memories/:id/review", async (c) => {
     const session = await resolveRestSession(c.req.raw.headers);
     const body = await c.req.json<{
