@@ -14,6 +14,8 @@ export interface InitCliOptions {
   mcpProjectId?: string;
   /** 非交互：MCP 服务地址 */
   mcpServerUrl?: string;
+  /** 非交互：MCP API Key */
+  mcpApiKey?: string;
 }
 
 export interface InitResolvedOptions {
@@ -26,6 +28,7 @@ export interface InitResolvedOptions {
     enabled: boolean;
     serverUrl: string;
     projectId: string;
+    apiKey: string;
   };
   cancelled: boolean;
 }

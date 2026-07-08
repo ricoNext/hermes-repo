@@ -47,6 +47,10 @@ function main(): void {
       "--mcp-server-url <url>",
       "非交互：MCP 服务地址，默认 http://localhost:3000/mcp",
     )
+    .option(
+      "--mcp-api-key <key>",
+      "非交互：MCP API Key，用于推送记忆时关联用户",
+    )
     .action(
       (options: {
         yes?: boolean;
@@ -55,6 +59,7 @@ function main(): void {
         tools?: string;
         mcpProjectId?: string;
         mcpServerUrl?: string;
+        mcpApiKey?: string;
       }) => {
         void runInitCommand({
           yes: options.yes,
@@ -63,6 +68,7 @@ function main(): void {
           tools: options.tools,
           mcpProjectId: options.mcpProjectId,
           mcpServerUrl: options.mcpServerUrl,
+          mcpApiKey: options.mcpApiKey,
         });
       },
     );

@@ -16,10 +16,10 @@ export function defaultDisabledMcpConfig(): McpConfig {
     projectId: "",
     apiKey: "",
     sync: {
-      mode: "off",
+      mode: "auto",
       onFlush: {
-        push: false,
-        pull: false,
+        push: true,
+        pull: true,
       },
       retries: 3,
       timeout: 30000,

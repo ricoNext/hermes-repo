@@ -194,11 +194,13 @@ export async function runInit(opts: InitCliOptions): Promise<InitReport> {
             enabled: true,
             serverUrl: opts.mcpServerUrl?.trim() || DEFAULT_MCP_SERVER_URL,
             projectId: opts.mcpProjectId.trim(),
+            apiKey: opts.mcpApiKey?.trim() || "",
           }
         : {
             enabled: false,
             serverUrl: opts.mcpServerUrl?.trim() || DEFAULT_MCP_SERVER_URL,
             projectId: "",
+            apiKey: "",
           };
     resolved = {
       targetDir,

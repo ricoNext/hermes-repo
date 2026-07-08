@@ -113,15 +113,19 @@ async function gatherMcpOptions(
   const existingBinding = readProjectBindingAtRepo(targetDir);
   const existingConfigPath = memoryPath(targetDir, "config.json");
   let existingServerUrl = DEFAULT_MCP_SERVER_URL;
+  let existingApiKey = "";
   let existingEnabled = Boolean(existingBinding);
 
   if (existsSync(existingConfigPath)) {
     try {
       const config = JSON.parse(readFileSync(existingConfigPath, "utf8")) as {
-        storage?: { mcp?: { enabled?: boolean; serverUrl?: string } };
+        storage?: { mcp?: { enabled?: boolean; serverUrl?: string; apiKey?: string } };
       };
       if (typeof config.storage?.mcp?.serverUrl === "string") {
         existingServerUrl = config.storage.mcp.serverUrl;
+      }
+      if (typeof config.storage?.mcp?.apiKey === "string") {
+        existingApiKey = config.storage.mcp.apiKey;
       }
       if (config.storage?.mcp?.enabled === true) {
         existingEnabled = true;
@@ -139,7 +143,7 @@ async function gatherMcpOptions(
   });
 
   if (!enable) {
-    return { enabled: false, serverUrl: existingServerUrl, projectId: "" };
+    return { enabled: false, serverUrl: existingServerUrl, projectId: "", apiKey: "" };
   }
 
   const projectId = await input({
@@ -155,10 +159,18 @@ async function gatherMcpOptions(
     validate: (value) => value.trim().length > 0 || "serverUrl 不能为空",
   });
 
+  const apiKey = await input({
+    message: existingApiKey
+      ? "MCP API Key（用于推送记忆时关联用户，留空则保留现有 key）"
+      : "MCP API Key（用于推送记忆时关联用户）",
+    default: "",
+  });
+
   return {
     enabled: true,
     serverUrl: serverUrl.trim(),
     projectId: projectId.trim(),
+    apiKey: apiKey.trim() || existingApiKey,
   };
 }
 

@@ -36,7 +36,7 @@ export function mergeConfigForInit(
   repoRoot: string,
   assistants: AssistantId[],
   llmOverride?: Partial<LlmConfigV2>,
-  mcpOverride?: Partial<McpConfig> & Pick<McpConfig, "enabled" | "serverUrl">,
+  mcpOverride?: Partial<McpConfig> & Pick<McpConfig, "enabled" | "serverUrl"> & { apiKey?: string },
 ): { content: string; action: InitFileAction } {
   const configPath = memoryPath(repoRoot, "config.json");
   const existed = existsSync(configPath);
