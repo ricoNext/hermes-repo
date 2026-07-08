@@ -41,7 +41,7 @@ export async function pushToMCP(
   const client = createMCPClient({
     serverUrl: mcp.serverUrl,
     projectId: mcp.projectId,
-    apiKey: mcp.apiKey,
+    userId: mcp.userId,
     timeout: mcp.sync.timeout,
   });
 
@@ -93,7 +93,7 @@ export async function pullFromMCP(ctx: RepoContext): Promise<TeamMemory[]> {
   const client = createMCPClient({
     serverUrl: mcp.serverUrl,
     projectId: mcp.projectId,
-    apiKey: mcp.apiKey,
+    userId: mcp.userId,
     timeout: mcp.sync.timeout,
   });
 

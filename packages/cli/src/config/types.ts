@@ -24,7 +24,7 @@ export interface McpConfig {
   enabled: boolean;
   serverUrl: string;
   projectId: string;
-  apiKey: string;
+  userId: string;
   sync: {
     mode: 'auto' | 'manual' | 'off';
     onFlush: {

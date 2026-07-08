@@ -113,19 +113,19 @@ async function gatherMcpOptions(
   const existingBinding = readProjectBindingAtRepo(targetDir);
   const existingConfigPath = memoryPath(targetDir, "config.json");
   let existingServerUrl = DEFAULT_MCP_SERVER_URL;
-  let existingApiKey = "";
+  let existingUserId = "";
   let existingEnabled = Boolean(existingBinding);
 
   if (existsSync(existingConfigPath)) {
     try {
       const config = JSON.parse(readFileSync(existingConfigPath, "utf8")) as {
-        storage?: { mcp?: { enabled?: boolean; serverUrl?: string; apiKey?: string } };
+        storage?: { mcp?: { enabled?: boolean; serverUrl?: string; userId?: string } };
       };
       if (typeof config.storage?.mcp?.serverUrl === "string") {
         existingServerUrl = config.storage.mcp.serverUrl;
       }
-      if (typeof config.storage?.mcp?.apiKey === "string") {
-        existingApiKey = config.storage.mcp.apiKey;
+      if (typeof config.storage?.mcp?.userId === "string") {
+        existingUserId = config.storage.mcp.userId;
       }
       if (config.storage?.mcp?.enabled === true) {
         existingEnabled = true;
@@ -143,7 +143,7 @@ async function gatherMcpOptions(
   });
 
   if (!enable) {
-    return { enabled: false, serverUrl: existingServerUrl, projectId: "", apiKey: "" };
+    return { enabled: false, serverUrl: existingServerUrl, projectId: "", userId: "" };
   }
 
   const projectId = await input({
@@ -159,15 +159,18 @@ async function gatherMcpOptions(
     validate: (value) => value.trim().length > 0 || "serverUrl 不能为空",
   });
 
-  const apiKey = await input({
-    message: existingApiKey
-      ? "MCP API Key（用于推送记忆时关联用户，留空则保留现有 key）"
-      : "MCP API Key（用于推送记忆时关联用户）",
-    default: existingApiKey,
+  const userId = await input({
+    message: existingUserId
+      ? "MCP 用户 ID（用于推送记忆时关联用户，留空则保留现有 userId）"
+      : "MCP 用户 ID（在 Hermes UI 中获取，用于推送记忆时关联用户）",
+    default: existingUserId,
     validate: (value) => {
       const trimmed = value.trim();
-      if (!trimmed && !existingApiKey) {
-        return "apiKey 不能为空";
+      if (!trimmed && !existingUserId) {
+        return "userId 不能为空";
+      }
+      if (trimmed && !isValidProjectId(trimmed)) {
+        return "请输入有效的 UUID 格式 userId";
       }
       return true;
     },
@@ -177,7 +180,7 @@ async function gatherMcpOptions(
     enabled: true,
     serverUrl: serverUrl.trim(),
     projectId: projectId.trim(),
-    apiKey: apiKey.trim(),
+    userId: userId.trim() || existingUserId,
   };
 }
 

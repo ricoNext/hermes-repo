@@ -19,11 +19,11 @@ export interface MCPClient {
 export function createMCPClient(config: {
   serverUrl: string;
   projectId: string;
-  apiKey: string;
+  userId: string;
   timeout: number;
 }): MCPClient {
   const headers = {
-    'Authorization': `Bearer ${config.apiKey}`,
+    'X-User-Id': config.userId,
     'X-Project-Id': config.projectId,
     'Content-Type': 'application/json',
   };

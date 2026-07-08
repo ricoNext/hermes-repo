@@ -65,7 +65,28 @@ export async function resolveAuth(
 export async function resolveRestSession(
   headers: IncomingHttpHeaders | Headers,
 ): Promise<RestSessionData> {
-  const session = await resolveAuth(headers);
+  const userId = getHeader(headers, "x-user-id");
+  if (!userId?.trim()) {
+    throw new HttpError(400, "缺少 X-User-Id header");
+  }
+
+  const user = await prisma.user.findUnique({
+    where: { id: userId.trim() },
+  });
+
+  if (!user) {
+    throw new HttpError(404, "用户不存在");
+  }
+
+  const session: SessionData = {
+    user: {
+      id: user.id,
+      username: user.username,
+      email: user.email,
+      name: user.name,
+      systemRole: user.systemRole,
+    },
+  };
 
   const headerProjectId = getHeader(headers, "x-project-id");
   if (headerProjectId) {
@@ -260,7 +281,7 @@ function registerRoutes(server: FastMCP<SessionData>): void {
         "Access-Control-Allow-Credentials": "true",
         "Access-Control-Allow-Methods": "GET,POST,PATCH,DELETE,OPTIONS",
         "Access-Control-Allow-Headers":
-          "Content-Type, Authorization, X-Project-Id",
+          "Content-Type, Authorization, X-Project-Id, X-User-Id",
       });
     }
 
@@ -273,7 +294,7 @@ function registerRoutes(server: FastMCP<SessionData>): void {
     }
     c.header(
       "Access-Control-Allow-Headers",
-      "Content-Type, Authorization, X-Project-Id",
+      "Content-Type, Authorization, X-Project-Id, X-User-Id",
     );
   });
 
