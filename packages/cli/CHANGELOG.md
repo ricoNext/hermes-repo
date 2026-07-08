@@ -1,5 +1,40 @@
 # Changelog
 
+## 1.4.0
+
+### Minor Changes
+
+- refactor: 将 MCP 认证从 apiKey 改为 userId
+
+  **Breaking Changes:**
+
+  - MCP 配置中的 `apiKey` 字段改为 `userId`
+  - 需要重新运行 `hermes-repo init` 配置 MCP 用户 ID
+
+  **CLI 变更:**
+
+  - `McpConfig.apiKey` → `McpConfig.userId`
+  - init 命令提示输入用户 ID（UUID 格式）而非 API Key
+  - 新增 `isValidUserId()` 校验函数
+
+  **客户端变更:**
+
+  - 使用 `X-User-Id` header 替代 `Authorization: Bearer <token>`
+  - 客户端配置参数从 `apiKey` 改为 `userId`
+
+  **服务端变更:**
+
+  - `resolveRestSession()` 直接通过 `X-User-Id` header 查询用户
+  - 移除 JWT token 认证逻辑（仅针对记忆推送/拉取）
+  - CORS 配置新增 `X-User-Id` header 支持
+
+  **迁移指南:**
+
+  1. 更新到新版本后，编辑 `.memory/config.json`
+  2. 将 `storage.mcp.apiKey` 改为 `storage.mcp.userId`
+  3. 填入 MCP 服务器中的用户 ID（可从 UI 获取）
+  4. 或重新运行 `npx @riconext/hermes-repo init` 重新配置
+
 ## 1.3.3
 
 ### Minor Changes
@@ -7,11 +42,13 @@
 - feat: 实现记忆生命周期重构和 MCP 同步功能
 
   **数据模型重构：**
+
   - 将 `MemoryScope` (PERSONAL/TEAM/PUBLIC) 重构为 `MemoryStatus` (PENDING/ARCHIVED/TRASH)
   - 添加审核流程：记忆从 PENDING → ARCHIVED（通过）或 TRASH（拒绝）
   - 添加审核字段：reviewerId, reviewedAt, reviewNote
 
   **CLI MCP 同步：**
+
   - 新增 `flush` 命令 MCP 同步功能（4 步流程）
     1. LLM 整理原始记忆
     2. 推送到 MCP 服务（状态：PENDING）
@@ -22,11 +59,13 @@
   - 团队记忆优先策略
 
   **配置增强：**
+
   - 扩展 `mcp` 配置项：endpoint, projectId, apiKey, sync, deduplication
   - 支持自动模式（auto）、手动模式（manual）、关闭模式（off）
   - 可配置推送/拉取行为和去重策略
 
   **文档更新：**
+
   - 新增 `IMPLEMENTATION_SUMMARY.md` 实施总结文档
   - 包含完整的测试步骤和配置说明
 
