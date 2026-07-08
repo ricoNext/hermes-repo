@@ -82,7 +82,9 @@ function scanMemories(repoRoot: string, basePath: string): MemoryItem[] {
       for (const file of files) {
         if (!file.isFile() || !file.name.endsWith('.md')) continue;
 
-        const fullPath = join(file.path, file.name);
+        // 修复：确保 file.path 存在
+        const filePath = file.path || dirPath;
+        const fullPath = join(filePath, file.name);
         const content = readFileSync(fullPath, 'utf8');
         const fm = parseFrontmatter(content);
         const body = content.replace(/^---\n[\s\S]*?\n---\n/, '');
