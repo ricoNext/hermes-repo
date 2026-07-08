@@ -71,8 +71,8 @@ describe("shouldAutoFlush", () => {
   });
 
   it("flushes when the minimum interval has elapsed", () => {
-    vi.useFakeTimers();
-    vi.setSystemTime(new Date("2026-06-29T10:30:00.000Z"));
+    const now = new Date("2026-06-29T10:30:00.000Z").getTime();
+    vi.spyOn(Date, "now").mockReturnValue(now);
 
     expect(
       shouldAutoFlush(
@@ -81,11 +81,13 @@ describe("shouldAutoFlush", () => {
         "2026-06-29T10:00:00.000Z",
       ),
     ).toBe(true);
+
+    vi.restoreAllMocks();
   });
 
   it("does not flush when all thresholds are below limits", () => {
-    vi.useFakeTimers();
-    vi.setSystemTime(new Date("2026-06-29T10:10:00.000Z"));
+    const now = new Date("2026-06-29T10:10:00.000Z").getTime();
+    vi.spyOn(Date, "now").mockReturnValue(now);
 
     expect(
       shouldAutoFlush(
@@ -94,5 +96,7 @@ describe("shouldAutoFlush", () => {
         "2026-06-29T10:00:00.000Z",
       ),
     ).toBe(false);
+
+    vi.restoreAllMocks();
   });
 });

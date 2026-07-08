@@ -110,7 +110,9 @@ describe("init", () => {
     expect(config.storage.backend).toBe("file");
     expect(config.storage.mcp).toMatchObject({
       enabled: false,
-      serverUrl: "http://localhost:3000/mcp",
+      serverUrl: "http://localhost:3000",
+      projectId: "",
+      userId: "",
     });
     expect(config.assistants).toContain("claude-code");
     expect(config.debug).toBe(false);

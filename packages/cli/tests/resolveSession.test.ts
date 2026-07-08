@@ -6,7 +6,7 @@ import {
 } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import {
   encodeClaudeProjectDir,
   resolveSessionJsonlPath,
@@ -15,6 +15,17 @@ import {
 const tempDirs: string[] = [];
 let prevClaudeConfigDir: string | undefined;
 let prevHermesJsonl: string | undefined;
+let prevSessionId: string | undefined;
+
+beforeEach(() => {
+  prevClaudeConfigDir = process.env.CLAUDE_CONFIG_DIR;
+  prevHermesJsonl = process.env.HERMES_SESSION_JSONL;
+  prevSessionId = process.env.CLAUDE_SESSION_ID;
+  // Clear session ID to allow tests to find any jsonl file
+  delete process.env.CLAUDE_SESSION_ID;
+  delete process.env.CLAUDE_CODE_SESSION_ID;
+  delete process.env.SESSION_ID;
+});
 
 afterEach(() => {
   for (const dir of tempDirs.splice(0)) {
@@ -30,6 +41,11 @@ afterEach(() => {
   } else {
     process.env.HERMES_SESSION_JSONL = prevHermesJsonl;
   }
+  if (prevSessionId === undefined) {
+    delete process.env.CLAUDE_SESSION_ID;
+  } else {
+    process.env.CLAUDE_SESSION_ID = prevSessionId;
+  }
 });
 
 function setupClaudeProjectsLayout(repoRoot: string): {
@@ -38,7 +54,6 @@ function setupClaudeProjectsLayout(repoRoot: string): {
 } {
   const claudeHome = mkdtempSync(join(tmpdir(), "hermes-claude-home-"));
   tempDirs.push(claudeHome);
-  prevClaudeConfigDir = process.env.CLAUDE_CONFIG_DIR;
   process.env.CLAUDE_CONFIG_DIR = claudeHome;
   delete process.env.HERMES_SESSION_JSONL;
 
