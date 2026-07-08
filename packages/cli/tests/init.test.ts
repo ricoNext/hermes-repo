@@ -121,11 +121,14 @@ describe("init", () => {
   it("init -y --mcp-project-id writes projectId into config.json and enables mcp", () => {
     const dir = makeTempDir();
     const projectId = "00000000-0000-4000-8000-000000000001";
+    const userId = "00000000-0000-4000-8000-000000000002";
     runCliInDir(dir, [
       "init",
       "-y",
       "--mcp-project-id",
       projectId,
+      "--mcp-user-id",
+      userId,
       "--mcp-server-url",
       "http://localhost:3000/mcp",
     ]);
@@ -138,6 +141,7 @@ describe("init", () => {
           enabled: boolean;
           serverUrl: string;
           projectId: string;
+          userId: string;
         };
       };
     };
@@ -145,6 +149,7 @@ describe("init", () => {
       enabled: true,
       serverUrl: "http://localhost:3000/mcp",
       projectId,
+      userId,
     });
     expect(existsSync(join(dir, ".memory/project.json"))).toBe(false);
   });

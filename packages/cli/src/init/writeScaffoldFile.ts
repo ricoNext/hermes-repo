@@ -67,6 +67,7 @@ function writeConfigJson(
         enabled: Boolean(mcpOverride.enabled && mcpOverride.projectId),
         serverUrl: mcpOverride.serverUrl,
         ...(mcpOverride.projectId ? { projectId: mcpOverride.projectId } : {}),
+        ...(mcpOverride.userId ? { userId: mcpOverride.userId } : {}),
       }
     : undefined;
 

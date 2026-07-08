@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.3.13
+
+### Patch Changes
+
+- fix: 修复 init 阶段 userId 没有更新到配置文件的问题
+  - 修正 CLI `--mcp-api-key` 参数为 `--mcp-user-id`
+  - 修复 `writeScaffoldFile.ts` 中 userId 字段未传递的问题
+  - 更新测试用例验证 userId 正确写入
+
 ## 1.4.0
 
 ### Minor Changes
