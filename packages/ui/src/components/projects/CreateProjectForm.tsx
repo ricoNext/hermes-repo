@@ -1,6 +1,7 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
@@ -19,20 +20,32 @@ interface CreateProjectFormProps {
 }
 
 export function CreateProjectForm({ onSuccess }: CreateProjectFormProps) {
+  const queryClient = useQueryClient();
   const {
     register,
     handleSubmit,
-    formState: { errors, isSubmitting },
+    formState: { errors },
     reset,
   } = useForm<FormValues>({
     resolver: zodResolver(schema),
     defaultValues: { name: "", description: "" },
   });
 
-  const onSubmit = handleSubmit(async (values) => {
-    await createProject(values);
-    reset();
-    onSuccess();
+  const createMutation = useMutation({
+    mutationFn: (values: FormValues) => createProject(values),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["projects"] });
+      reset();
+      onSuccess();
+    },
+    onError: (error) => {
+      console.error("创建项目失败:", error);
+      alert(`创建失败: ${error instanceof Error ? error.message : "未知错误"}`);
+    },
+  });
+
+  const onSubmit = handleSubmit((values) => {
+    createMutation.mutate(values);
   });
 
   return (
@@ -44,8 +57,8 @@ export function CreateProjectForm({ onSuccess }: CreateProjectFormProps) {
         ) : null}
       </div>
       <Input placeholder="项目描述（可选）" {...register("description")} />
-      <Button type="submit" disabled={isSubmitting} className="w-full">
-        {isSubmitting ? "创建中..." : "创建项目"}
+      <Button type="submit" disabled={createMutation.isPending} className="w-full">
+        {createMutation.isPending ? "创建中..." : "创建项目"}
       </Button>
     </form>
   );

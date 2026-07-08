@@ -39,22 +39,29 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   return (
     <>
-      {/* 左侧边栏 - 固定高度 */}
-      <aside className="flex h-screen w-56 shrink-0 flex-col border-r bg-muted/30">
+      {/* 左侧边栏 - 浮动卡片式设计 */}
+      <aside className="flex h-screen w-64 shrink-0 flex-col bg-gradient-to-b from-stone-50 to-stone-100/50 p-4">
         {/* 头部 Logo */}
-        <div className="border-b px-4 py-5">
+        <div className="mb-6 rounded-xl bg-white p-5 shadow-sm ring-1 ring-stone-200/50">
           <Link href="/projects" className="block">
-            <span className="text-lg font-semibold tracking-tight">
-              Hermes
-            </span>
-            <span className="mt-1 block text-xs text-muted-foreground">
-              团队记忆管理
-            </span>
+            <div className="flex items-center gap-2">
+              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-to-br from-amber-500 to-amber-600 text-white shadow-md">
+                <span className="text-sm font-bold">H</span>
+              </div>
+              <div className="flex-1">
+                <span className="block text-base font-semibold tracking-tight text-stone-900">
+                  Hermes
+                </span>
+                <span className="block text-xs font-medium text-stone-500">
+                  团队记忆
+                </span>
+              </div>
+            </div>
           </Link>
         </div>
 
         {/* 导航区域 - 占据剩余空间 */}
-        <nav className="flex flex-1 flex-col gap-1 overflow-y-auto p-3">
+        <nav className="mb-4 flex flex-1 flex-col gap-1.5 overflow-y-auto rounded-xl bg-white p-2 shadow-sm ring-1 ring-stone-200/50">
           {navItems
             .filter((item) => item.visible(user?.systemRole))
             .map((item) => {
@@ -65,13 +72,16 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 key={item.href}
                 href={item.href}
                 className={cn(
-                  "flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors",
+                  "group flex items-center gap-3 rounded-lg px-3.5 py-2.5 text-sm font-medium transition-all duration-200",
                   active
-                    ? "bg-primary text-primary-foreground"
-                    : "text-muted-foreground hover:bg-muted hover:text-foreground",
+                    ? "bg-gradient-to-r from-amber-500 to-amber-600 text-white shadow-md"
+                    : "text-stone-600 hover:bg-stone-100 hover:text-stone-900",
                 )}
               >
-                <Icon className="size-4 shrink-0" />
+                <Icon className={cn(
+                  "size-4 shrink-0 transition-transform duration-200",
+                  active ? "text-white" : "text-stone-400 group-hover:text-stone-600"
+                )} />
                 {item.label}
               </Link>
             );
@@ -79,19 +89,27 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         </nav>
 
         {/* 用户信息 - 固定在底部 */}
-        <div className="mt-auto border-t p-3">
+        <div className="rounded-xl bg-white p-4 shadow-sm ring-1 ring-stone-200/50">
           {user ? (
-            <div className="space-y-2">
-              <div>
-                <p className="text-sm font-medium">{user.name}</p>
-                <p className="text-xs text-muted-foreground">
-                  @{user.username} · {systemRoleLabel(user.systemRole)}
-                </p>
+            <div className="space-y-3">
+              <div className="flex items-start gap-3">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-indigo-500 to-indigo-700 text-sm font-semibold text-white shadow-md">
+                  {user.name.charAt(0).toUpperCase()}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm font-semibold text-stone-900">{user.name}</p>
+                  <p className="truncate text-xs text-stone-500">
+                    @{user.username}
+                  </p>
+                  <p className="mt-0.5 text-xs font-medium text-amber-600">
+                    {systemRoleLabel(user.systemRole)}
+                  </p>
+                </div>
               </div>
               <Button
                 variant="outline"
                 size="sm"
-                className="w-full"
+                className="w-full border-stone-200 text-stone-600 hover:bg-stone-50 hover:text-stone-900"
                 onClick={handleLogout}
               >
                 <LogOut className="size-3.5" />
@@ -103,7 +121,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       </aside>
 
       {/* 主内容区域 - 占据剩余空间并可滚动 */}
-      <main className="flex-1 overflow-y-auto">{children}</main>
+      <main className="flex-1 overflow-y-auto bg-stone-50">{children}</main>
     </>
   );
 }

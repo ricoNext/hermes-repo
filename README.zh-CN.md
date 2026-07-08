@@ -183,6 +183,124 @@ hermes-repo 使用 OpenAI 兼容的 Chat Completions 接口：
 npx @riconext/hermes-repo capture-llm --flush
 ```
 
+## MCP 服务器使用
+
+hermes-repo 提供了 MCP 服务器（`@riconext/hermes-mcp-server`）用于团队级别的记忆管理。它暴露 MCP 工具用于列出项目、添加记忆、搜索和提升记忆，同时提供 REST API 供 Web UI 使用。
+
+### MCP 工具
+
+- `list_projects` — 列出可用项目
+- `add_memory` — 向项目添加新记忆
+- `search_memories` — 按关键词搜索记忆
+- `promote_memory` — 将记忆提升到团队级别
+- `delete_memory` — 删除记忆
+
+### 部署 MCP 服务器
+
+1. **启动 PostgreSQL**
+
+   在仓库根目录：
+
+   ```bash
+   docker compose up -d
+   ```
+
+2. **配置环境变量**
+
+   ```bash
+   cd packages/mcp-server
+   cp .env.example .env
+   ```
+
+   关键变量：
+
+   - `DATABASE_URL` — PostgreSQL 连接字符串
+   - `MCP_TRANSPORT` — `httpStream`（默认）或 `stdio`
+   - `DEV_AUTH_BYPASS=true` — 开发模式跳过 JWT 认证
+
+3. **初始化数据库**
+
+   ```bash
+   bun run db:push
+   bun run db:seed
+   ```
+
+   默认管理员账号：`admin` / `admin`（角色：SUPER_ADMIN）
+
+4. **启动 MCP 服务**
+
+   ```bash
+   bun run dev:mcp   # 从仓库根目录
+   # 或
+   cd packages/mcp-server
+   bun run dev
+   ```
+
+   服务运行在 `http://localhost:3000`。健康检查：`http://localhost:3000/health`。
+
+### 接入 Claude Code
+
+在 Claude Code 配置中添加 MCP 服务器：
+
+```json
+{
+  "mcpServers": {
+    "hermes-memory": {
+      "command": "node",
+      "args": ["/path/to/hermes-repo/packages/mcp-server/dist/index.js"],
+      "env": {
+        "DATABASE_URL": "postgresql://hermes:hermes@localhost:5432/hermes_memory",
+        "MCP_TRANSPORT": "stdio",
+        "DEV_AUTH_BYPASS": "true"
+      }
+    }
+  }
+}
+```
+
+请将 `/path/to/hermes-repo` 替换为实际的仓库路径。
+
+## 部署 UI
+
+Web UI（`@riconext/hermes-ui`）提供了用于浏览项目和记忆的仪表盘。
+
+1. **配置环境变量**
+
+   ```bash
+   cd packages/ui
+   cp .env.example .env.local
+   ```
+
+   编辑 `.env.local`：
+
+   ```bash
+   NEXT_PUBLIC_API_URL=http://localhost:3000
+   ```
+
+2. **启动 UI**
+
+   从仓库根目录：
+
+   ```bash
+   bun run dev:ui
+   ```
+
+   或从 UI 包目录：
+
+   ```bash
+   bun run dev
+   ```
+
+   访问 UI：[http://localhost:3001](http://localhost:3001)。
+
+3. **生产构建**
+
+   ```bash
+   cd packages/ui
+   bun run build
+   bun run start
+   ```
+
 ## 支持的助手
 
 | 助手 | `init` 写入 | 运行时行为 |

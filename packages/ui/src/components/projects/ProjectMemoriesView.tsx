@@ -31,33 +31,36 @@ export function ProjectMemoriesView({ projectId }: ProjectMemoriesViewProps) {
   );
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       <header>
         <nav
           aria-label="面包屑"
-          className="mb-3 flex items-center gap-1 text-sm text-muted-foreground"
+          className="mb-4 flex items-center gap-1.5 text-sm"
         >
-          <Link href="/projects" className="hover:text-foreground">
+          <Link href="/projects" className="text-stone-500 transition-colors hover:text-stone-900">
             项目管理
           </Link>
-          <ChevronRight className="size-4" />
-          <span className="text-foreground">
+          <ChevronRight className="size-4 text-stone-400" />
+          <span className="font-medium text-stone-900">
             {project?.name ?? "加载中..."}
           </span>
-          <ChevronRight className="size-4" />
-          <span className="text-foreground">记忆</span>
+          <ChevronRight className="size-4 text-stone-400" />
+          <span className="font-medium text-stone-900">记忆</span>
         </nav>
         <div className="flex items-start justify-between gap-4">
           <div className="min-w-0">
-            <h1 className="text-3xl font-bold tracking-tight">
+            <div className="mb-3 inline-block rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-800 shadow-sm">
+              项目记忆
+            </div>
+            <h1 className="text-4xl font-bold tracking-tight text-stone-900">
               {project?.name ?? "项目记忆"}
             </h1>
             {project?.description ? (
-              <p className="mt-2 text-muted-foreground">
+              <p className="mt-3 text-base leading-relaxed text-stone-600">
                 {project.description}
               </p>
             ) : null}
-            <p className="mt-1 font-mono text-xs text-muted-foreground">
+            <p className="mt-2 font-mono text-xs text-stone-400">
               {projectId}
             </p>
           </div>

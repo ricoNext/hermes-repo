@@ -118,12 +118,22 @@ export async function createProject(
 }
 
 export async function deleteProject(user: AuthUser, projectId: string) {
-  const allowed = await checkProjectPermission(user, projectId, "admin");
-  if (!allowed) {
-    throw new HttpError(403, "无权限删除此项目");
+  // 只有超级管理员可以删除项目
+  if (!isSuperAdmin(user)) {
+    throw new HttpError(403, "只有超级管理员可以删除项目");
   }
 
-  await prisma.project.delete({ where: { id: projectId } });
+  // 使用事务确保数据一致性：先删除所有关联数据，再删除项目
+  await prisma.$transaction(async (tx) => {
+    // 删除项目下的所有记忆
+    await tx.memory.deleteMany({ where: { projectId } });
+
+    // 删除项目成员关系
+    await tx.projectRole.deleteMany({ where: { projectId } });
+
+    // 最后删除项目
+    await tx.project.delete({ where: { id: projectId } });
+  });
 }
 
 export async function addMemory(

@@ -183,6 +183,124 @@ Process queued capture upgrades manually:
 npx @riconext/hermes-repo capture-llm --flush
 ```
 
+## MCP Server Usage
+
+hermes-repo provides an MCP server (`@riconext/hermes-mcp-server`) for team-level memory management. It exposes MCP tools for listing projects, adding memories, searching, and promoting memories, alongside a REST API for the web UI.
+
+### MCP Tools
+
+- `list_projects` — list available projects
+- `add_memory` — add a new memory to a project
+- `search_memories` — search memories by keyword
+- `promote_memory` — promote a memory to team level
+- `delete_memory` — delete a memory
+
+### Setup MCP Server
+
+1. **Start PostgreSQL**
+
+   From the repository root:
+
+   ```bash
+   docker compose up -d
+   ```
+
+2. **Configure environment**
+
+   ```bash
+   cd packages/mcp-server
+   cp .env.example .env
+   ```
+
+   Key variables:
+
+   - `DATABASE_URL` — PostgreSQL connection string
+   - `MCP_TRANSPORT` — `httpStream` (default) or `stdio`
+   - `DEV_AUTH_BYPASS=true` — skip JWT auth during development
+
+3. **Initialize database**
+
+   ```bash
+   bun run db:push
+   bun run db:seed
+   ```
+
+   Default admin account: `admin` / `admin` (role: SUPER_ADMIN)
+
+4. **Start the MCP server**
+
+   ```bash
+   bun run dev:mcp   # from repo root
+   # or
+   cd packages/mcp-server
+   bun run dev
+   ```
+
+   Server runs at `http://localhost:3000`. Health check: `http://localhost:3000/health`.
+
+### Connect to Claude Code
+
+Add the MCP server to your Claude Code configuration:
+
+```json
+{
+  "mcpServers": {
+    "hermes-memory": {
+      "command": "node",
+      "args": ["/path/to/hermes-repo/packages/mcp-server/dist/index.js"],
+      "env": {
+        "DATABASE_URL": "postgresql://hermes:hermes@localhost:5432/hermes_memory",
+        "MCP_TRANSPORT": "stdio",
+        "DEV_AUTH_BYPASS": "true"
+      }
+    }
+  }
+}
+```
+
+Replace `/path/to/hermes-repo` with your actual repository path.
+
+## Deploy UI
+
+The web UI (`@riconext/hermes-ui`) provides a dashboard for browsing projects and memories.
+
+1. **Configure environment**
+
+   ```bash
+   cd packages/ui
+   cp .env.example .env.local
+   ```
+
+   Edit `.env.local`:
+
+   ```bash
+   NEXT_PUBLIC_API_URL=http://localhost:3000
+   ```
+
+2. **Start the UI**
+
+   From the repository root:
+
+   ```bash
+   bun run dev:ui
+   ```
+
+   Or from the UI package directory:
+
+   ```bash
+   bun run dev
+   ```
+
+   Access the UI at [http://localhost:3001](http://localhost:3001).
+
+3. **Build for production**
+
+   ```bash
+   cd packages/ui
+   bun run build
+   bun run start
+   ```
+
 ## Supported Assistants
 
 | Assistant | Setup written by `init` | Runtime behavior |

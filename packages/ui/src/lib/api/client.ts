@@ -29,6 +29,13 @@ export function getAuthToken(): string | null {
   return useAuthStore.getState().token ?? getStoredToken();
 }
 
+export function getCurrentUserId(): string | null {
+  if (typeof window === "undefined") {
+    return null;
+  }
+  return useAuthStore.getState().user?.id ?? null;
+}
+
 export async function apiFetch<T>(
   path: string,
   init?: RequestInit & { projectId?: string; skipAuth?: boolean },
@@ -44,6 +51,13 @@ export async function apiFetch<T>(
     const token = getAuthToken();
     if (token) {
       headers.set("Authorization", `Bearer ${token}`);
+    }
+  }
+  // 添加 X-User-Id header（MCP 服务端需要）
+  if (!headers.has("X-User-Id")) {
+    const userId = getCurrentUserId();
+    if (userId) {
+      headers.set("X-User-Id", userId);
     }
   }
 

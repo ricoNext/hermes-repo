@@ -25,6 +25,7 @@ import {
   searchMemories,
   updateMemory,
 } from "@/lib/api/memories";
+import { canManageMemories } from "@/lib/auth/permissions";
 import { useAuthStore } from "@/lib/auth/store";
 import type { Memory, MemoryStatus, MemoryType } from "@/lib/api/types";
 import { MemoryCard } from "./MemoryCard";
@@ -39,10 +40,14 @@ interface MemoryExplorerProps {
 
 export function MemoryExplorer({ projectId }: MemoryExplorerProps) {
   const token = useAuthStore((state) => state.token);
+  const currentUser = useAuthStore((state) => state.user);
   const [activeTab, setActiveTab] = useState<MemoryStatus>("PENDING");
   const [searchQuery, setSearchQuery] = useState("");
   const [typeFilter, setTypeFilter] = useState<string>("all");
   const [selectedMemoryIds, setSelectedMemoryIds] = useState<Set<string>>(new Set());
+
+  // 权限控制：只有超管和管理员可以管理记忆
+  const canManage = canManageMemories(currentUser?.systemRole);
 
   // Dialogs
   const [reviewDialog, setReviewDialog] = useState<{
@@ -162,34 +167,38 @@ export function MemoryExplorer({ projectId }: MemoryExplorerProps) {
     }
   };
 
-  const showBatchActions = selectedMemoryIds.size > 0 && activeTab === "PENDING";
+  const showBatchActions = canManage && selectedMemoryIds.size > 0 && activeTab === "PENDING";
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <h2 className="text-2xl font-bold">团队记忆管理</h2>
+        <div>
+          <h2 className="text-xl font-semibold text-stone-900">团队记忆管理</h2>
+          <p className="mt-1 text-sm text-stone-500">审核、归档和管理团队记忆</p>
+        </div>
 
         {showBatchActions && (
           <div className="flex items-center gap-2">
-            <span className="text-sm text-muted-foreground">
+            <span className="text-sm font-medium text-stone-600">
               已选择 {selectedMemoryIds.size} 条
             </span>
             <Button
               size="sm"
-              variant="default"
+              className="bg-gradient-to-r from-green-500 to-green-600 text-white shadow-md hover:from-green-600 hover:to-green-700"
               onClick={handleBatchArchive}
               disabled={batchReviewMutation.isPending}
             >
-              <CheckCircle className="mr-1 h-4 w-4" />
+              <CheckCircle className="mr-1.5 h-4 w-4" />
               批量归档
             </Button>
             <Button
               size="sm"
               variant="outline"
+              className="border-stone-200 text-stone-700 hover:bg-stone-50"
               onClick={handleBatchTrash}
               disabled={batchReviewMutation.isPending}
             >
-              <XCircle className="mr-1 h-4 w-4" />
+              <XCircle className="mr-1.5 h-4 w-4" />
               批量拒绝
             </Button>
           </div>
@@ -203,45 +212,54 @@ export function MemoryExplorer({ projectId }: MemoryExplorerProps) {
           setSelectedMemoryIds(new Set());
         }}
       >
-        <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="PENDING">
+        <TabsList className="grid w-full grid-cols-3 bg-stone-100 p-1">
+          <TabsTrigger
+            value="PENDING"
+            className="data-[state=active]:bg-white data-[state=active]:text-stone-900 data-[state=active]:shadow-sm"
+          >
             待审核
             {memories && activeTab === "PENDING" && (
-              <span className="ml-2 text-xs text-muted-foreground">
-                ({memories.length})
+              <span className="ml-2 rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-800">
+                {memories.length}
               </span>
             )}
           </TabsTrigger>
-          <TabsTrigger value="ARCHIVED">
+          <TabsTrigger
+            value="ARCHIVED"
+            className="data-[state=active]:bg-white data-[state=active]:text-stone-900 data-[state=active]:shadow-sm"
+          >
             已归档
             {memories && activeTab === "ARCHIVED" && (
-              <span className="ml-2 text-xs text-muted-foreground">
-                ({memories.length})
+              <span className="ml-2 rounded-full bg-green-100 px-2 py-0.5 text-xs font-semibold text-green-800">
+                {memories.length}
               </span>
             )}
           </TabsTrigger>
-          <TabsTrigger value="TRASH">
+          <TabsTrigger
+            value="TRASH"
+            className="data-[state=active]:bg-white data-[state=active]:text-stone-900 data-[state=active]:shadow-sm"
+          >
             垃圾桶
             {memories && activeTab === "TRASH" && (
-              <span className="ml-2 text-xs text-muted-foreground">
-                ({memories.length})
+              <span className="ml-2 rounded-full bg-stone-200 px-2 py-0.5 text-xs font-semibold text-stone-700">
+                {memories.length}
               </span>
             )}
           </TabsTrigger>
         </TabsList>
 
-        <div className="mt-4 flex flex-col gap-2 sm:flex-row">
+        <div className="mt-5 flex flex-col gap-3 sm:flex-row">
           <Input
-            placeholder="搜索记忆..."
+            placeholder="搜索记忆标题或内容..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="flex-1"
+            className="flex-1 border-stone-200 bg-white shadow-sm"
           />
           <Select
             value={typeFilter}
             onValueChange={(value) => setTypeFilter(value ?? "all")}
           >
-            <SelectTrigger className="w-full sm:w-[180px]">
+            <SelectTrigger className="w-full border-stone-200 bg-white shadow-sm sm:w-[180px]">
               <SelectValue placeholder="类型" />
             </SelectTrigger>
             <SelectContent>
@@ -254,62 +272,72 @@ export function MemoryExplorer({ projectId }: MemoryExplorerProps) {
           </Select>
         </div>
 
-        <TabsContent value="PENDING" className="mt-4">
-          {isLoading ? <div>加载中...</div> : null}
+        <TabsContent value="PENDING" className="mt-6">
+          {isLoading ? <div className="text-sm text-stone-600">加载中...</div> : null}
           {isError ? (
-            <p className="text-sm text-destructive">
-              {error instanceof ApiError
-                ? error.status === 401
-                  ? "登录已过期，请重新登录"
-                  : error.status === 0
-                    ? error.message
-                    : `请求失败（${error.status}）：${error.message}`
-                : "加载记忆失败，请稍后重试"}
-            </p>
+            <div className="rounded-xl border border-red-200 bg-red-50 p-4">
+              <p className="font-medium text-red-900">
+                {error instanceof ApiError
+                  ? error.status === 401
+                    ? "登录已过期"
+                    : error.status === 0
+                      ? error.message
+                      : `请求失败（${error.status}）`
+                  : "加载记忆失败"}
+              </p>
+              <p className="mt-1 text-sm text-red-700">
+                {error instanceof ApiError && error.status === 401
+                  ? "请重新登录"
+                  : "请稍后重试"}
+              </p>
+            </div>
           ) : null}
 
           {!isLoading && !isError ? (
             <div className="space-y-4">
-              {memories && memories.length > 0 && (
-                <div className="flex items-center gap-2">
+              {canManage && memories && memories.length > 0 && (
+                <div className="flex items-center gap-3 rounded-lg border border-stone-200 bg-white px-4 py-3 shadow-sm">
                   <input
                     type="checkbox"
                     checked={selectedMemoryIds.size === memories.length}
                     onChange={(e) => handleSelectAll(e.target.checked)}
-                    className="h-4 w-4"
+                    className="h-4 w-4 rounded border-stone-300 text-amber-600 focus:ring-amber-500"
                   />
-                  <span className="text-sm text-muted-foreground">全选</span>
+                  <span className="text-sm font-medium text-stone-700">全选</span>
                 </div>
               )}
 
               {memories && memories.length === 0 ? (
-                <p className="text-sm text-muted-foreground">暂无待审核记忆</p>
+                <div className="rounded-xl border border-stone-200 bg-white p-12 text-center shadow-sm">
+                  <p className="text-sm text-stone-500">暂无待审核记忆</p>
+                  <p className="mt-1 text-xs text-stone-400">新的记忆将出现在这里</p>
+                </div>
               ) : null}
               <div className="grid gap-4">
                 {memories?.map((memory) => (
                   <MemoryCard
                     key={memory.id}
                     memory={memory}
-                    selectable
+                    selectable={canManage}
                     selected={selectedMemoryIds.has(memory.id)}
                     onSelect={(selected) => handleSelectMemory(memory.id, selected)}
                     onPreview={() => setPreviewDialog({ open: true, memory })}
-                    onEdit={() => setEditDialog({ open: true, memory })}
-                    onArchive={() =>
+                    onEdit={canManage ? () => setEditDialog({ open: true, memory }) : undefined}
+                    onArchive={canManage ? () =>
                       setReviewDialog({
                         open: true,
                         memoryId: memory.id,
                         memoryTitle: memory.title,
                         action: "archive",
-                      })
+                      }) : undefined
                     }
-                    onTrash={() =>
+                    onTrash={canManage ? () =>
                       setReviewDialog({
                         open: true,
                         memoryId: memory.id,
                         memoryTitle: memory.title,
                         action: "trash",
-                      })
+                      }) : undefined
                     }
                   />
                 ))}
@@ -318,24 +346,34 @@ export function MemoryExplorer({ projectId }: MemoryExplorerProps) {
           ) : null}
         </TabsContent>
 
-        <TabsContent value="ARCHIVED" className="mt-4">
-          {isLoading ? <div>加载中...</div> : null}
+        <TabsContent value="ARCHIVED" className="mt-6">
+          {isLoading ? <div className="text-sm text-stone-600">加载中...</div> : null}
           {isError ? (
-            <p className="text-sm text-destructive">
-              {error instanceof ApiError
-                ? error.status === 401
-                  ? "登录已过期，请重新登录"
-                  : error.status === 0
-                    ? error.message
-                    : `请求失败（${error.status}）：${error.message}`
-                : "加载记忆失败，请稍后重试"}
-            </p>
+            <div className="rounded-xl border border-red-200 bg-red-50 p-4">
+              <p className="font-medium text-red-900">
+                {error instanceof ApiError
+                  ? error.status === 401
+                    ? "登录已过期"
+                    : error.status === 0
+                      ? error.message
+                      : `请求失败（${error.status}）`
+                  : "加载记忆失败"}
+              </p>
+              <p className="mt-1 text-sm text-red-700">
+                {error instanceof ApiError && error.status === 401
+                  ? "请重新登录"
+                  : "请稍后重试"}
+              </p>
+            </div>
           ) : null}
 
           {!isLoading && !isError ? (
             <div className="space-y-4">
               {memories && memories.length === 0 ? (
-                <p className="text-sm text-muted-foreground">暂无已归档记忆</p>
+                <div className="rounded-xl border border-stone-200 bg-white p-12 text-center shadow-sm">
+                  <p className="text-sm text-stone-500">暂无已归档记忆</p>
+                  <p className="mt-1 text-xs text-stone-400">已归档的记忆将出现在这里</p>
+                </div>
               ) : null}
               <div className="grid gap-4">
                 {memories?.map((memory) => (
@@ -351,24 +389,34 @@ export function MemoryExplorer({ projectId }: MemoryExplorerProps) {
           ) : null}
         </TabsContent>
 
-        <TabsContent value="TRASH" className="mt-4">
-          {isLoading ? <div>加载中...</div> : null}
+        <TabsContent value="TRASH" className="mt-6">
+          {isLoading ? <div className="text-sm text-stone-600">加载中...</div> : null}
           {isError ? (
-            <p className="text-sm text-destructive">
-              {error instanceof ApiError
-                ? error.status === 401
-                  ? "登录已过期，请重新登录"
-                  : error.status === 0
-                    ? error.message
-                    : `请求失败（${error.status}）：${error.message}`
-                : "加载记忆失败，请稍后重试"}
-            </p>
+            <div className="rounded-xl border border-red-200 bg-red-50 p-4">
+              <p className="font-medium text-red-900">
+                {error instanceof ApiError
+                  ? error.status === 401
+                    ? "登录已过期"
+                    : error.status === 0
+                      ? error.message
+                      : `请求失败（${error.status}）`
+                  : "加载记忆失败"}
+              </p>
+              <p className="mt-1 text-sm text-red-700">
+                {error instanceof ApiError && error.status === 401
+                  ? "请重新登录"
+                  : "请稍后重试"}
+              </p>
+            </div>
           ) : null}
 
           {!isLoading && !isError ? (
             <div className="space-y-4">
               {memories && memories.length === 0 ? (
-                <p className="text-sm text-muted-foreground">垃圾桶为空</p>
+                <div className="rounded-xl border border-stone-200 bg-white p-12 text-center shadow-sm">
+                  <p className="text-sm text-stone-500">垃圾桶为空</p>
+                  <p className="mt-1 text-xs text-stone-400">被拒绝的记忆将出现在这里</p>
+                </div>
               ) : null}
               <div className="grid gap-4">
                 {memories?.map((memory) => (
@@ -376,7 +424,14 @@ export function MemoryExplorer({ projectId }: MemoryExplorerProps) {
                     key={memory.id}
                     memory={memory}
                     onPreview={() => setPreviewDialog({ open: true, memory })}
-                    onDelete={() => deleteMutation.mutate(memory.id)}
+                    onArchive={canManage ? () =>
+                      setReviewDialog({
+                        open: true,
+                        memoryId: memory.id,
+                        memoryTitle: memory.title,
+                        action: "archive",
+                      }) : undefined
+                    }
                   />
                 ))}
               </div>
