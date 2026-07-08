@@ -88,9 +88,6 @@ function parseMcpConfig(raw: Record<string, unknown>): McpConfig {
   const serverUrl = typeof mcp.serverUrl === "string" && mcp.serverUrl.trim()
     ? mcp.serverUrl.trim()
     : DEFAULT_MCP_SERVER_URL;
-  const endpoint = typeof mcp.endpoint === "string" && mcp.endpoint.trim()
-    ? mcp.endpoint.trim()
-    : serverUrl; // 兼容旧配置
   const projectId = typeof mcp.projectId === "string" && mcp.projectId.trim()
     ? mcp.projectId.trim()
     : "";
@@ -107,8 +104,7 @@ function parseMcpConfig(raw: Record<string, unknown>): McpConfig {
 
   return {
     enabled,
-    serverUrl, // 保留兼容
-    endpoint,
+    serverUrl,
     projectId,
     apiKey,
     sync: {

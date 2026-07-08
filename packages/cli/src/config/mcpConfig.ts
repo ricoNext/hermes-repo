@@ -13,7 +13,6 @@ export function defaultDisabledMcpConfig(): McpConfig {
   return {
     enabled: false,
     serverUrl: DEFAULT_MCP_SERVER_URL,
-    endpoint: DEFAULT_MCP_SERVER_URL,
     projectId: "",
     apiKey: "",
     sync: {

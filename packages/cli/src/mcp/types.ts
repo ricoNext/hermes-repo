@@ -1,6 +1,6 @@
 export interface MCPConfig {
   enabled: boolean;
-  endpoint: string;
+  serverUrl: string;
   projectId: string;
   apiKey: string;
   sync: {

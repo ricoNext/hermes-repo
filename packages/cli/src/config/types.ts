@@ -22,8 +22,7 @@ export interface ConsolidateConfig {
 
 export interface McpConfig {
   enabled: boolean;
-  serverUrl?: string; // 旧字段，保留兼容
-  endpoint: string;
+  serverUrl: string;
   projectId: string;
   apiKey: string;
   sync: {

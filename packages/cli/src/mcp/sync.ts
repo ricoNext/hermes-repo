@@ -39,7 +39,7 @@ export async function pushToMCP(
   if (!mcp?.enabled) return 0;
 
   const client = createMCPClient({
-    endpoint: mcp.endpoint,
+    serverUrl: mcp.serverUrl,
     projectId: mcp.projectId,
     apiKey: mcp.apiKey,
     timeout: mcp.sync.timeout,
@@ -91,7 +91,7 @@ export async function pullFromMCP(ctx: RepoContext): Promise<TeamMemory[]> {
   if (!mcp?.enabled) return [];
 
   const client = createMCPClient({
-    endpoint: mcp.endpoint,
+    serverUrl: mcp.serverUrl,
     projectId: mcp.projectId,
     apiKey: mcp.apiKey,
     timeout: mcp.sync.timeout,

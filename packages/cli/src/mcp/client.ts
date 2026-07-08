@@ -17,7 +17,7 @@ export interface MCPClient {
 }
 
 export function createMCPClient(config: {
-  endpoint: string;
+  serverUrl: string;
   projectId: string;
   apiKey: string;
   timeout: number;
@@ -30,7 +30,7 @@ export function createMCPClient(config: {
 
   return {
     async addMemory(input) {
-      const res = await fetch(`${config.endpoint}/api/memories`, {
+      const res = await fetch(`${config.serverUrl}/api/memories`, {
         method: 'POST',
         headers,
         body: JSON.stringify(input),
@@ -52,7 +52,7 @@ export function createMCPClient(config: {
       if (params.query) query.set('q', params.query);
 
       const res = await fetch(
-        `${config.endpoint}/api/memories?${query}`,
+        `${config.serverUrl}/api/memories?${query}`,
         {
           headers,
           signal: AbortSignal.timeout(config.timeout),
