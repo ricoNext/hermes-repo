@@ -175,7 +175,7 @@ export async function runConsolidate(
       `LLM 返回: ${llmResult.knowledgeFiles.length} knowledge files, ${llmResult.skippedSessions.length} skipped`,
     );
 
-    // Step 4: 写入知识文件 + MEMORY.md
+    // Step 4: 写入知识文件（不写入 MEMORY.md，由调用方负责）
     debugLog(debug === true, "consolidate", "writing knowledge files");
     const writeResult = writeKnowledgeFiles(repoRoot, llmResult.knowledgeFiles);
     if (writeResult.failed.length > 0) {
@@ -194,11 +194,10 @@ export async function runConsolidate(
       `knowledge files written: created=${writeResult.created.length}, updated=${writeResult.updated.length}`,
     );
 
+    // 验证 MEMORY.md 链接（但不写入）
     debugLog(debug === true, "consolidate", "validating MEMORY.md links");
     assertMemoryKnowledgeLinksExist(repoRoot, llmResult.memoryMd);
     debugLog(debug === true, "consolidate", "MEMORY.md links ok");
-    debugLog(debug === true, "consolidate", "writing MEMORY.md");
-    writeMemoryMd(repoRoot, llmResult.memoryMd);
 
     // Step 5: 更新 session 状态为 done
     debugLog(
