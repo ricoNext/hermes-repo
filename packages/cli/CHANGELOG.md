@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.5.1
+
+### Patch Changes
+
+- 3d0f208: 移除未使用的 `mcp.deduplication` 配置，并同步更新中英文 README 与 CLI 文档
+
 ## 1.5.0
 
 ### Minor Changes
@@ -18,7 +24,6 @@
   1. 将配置中的 `storage.mcp` 改为顶层 `mcp`
   2. 删除 `version`、`storage.backend` 与空的 `storage` 对象
   3. 或重新运行 `npx @riconext/hermes-repo init` 生成新配置
-
 
 ## 1.3.13
 
