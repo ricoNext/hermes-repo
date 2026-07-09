@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.5.2
+
+### Patch Changes
+
+- f2ba12a: 精简 CLI README：调整标题层级并移除重复的配置说明章节
+
 ## 1.5.1
 
 ### Patch Changes
