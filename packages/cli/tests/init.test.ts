@@ -86,29 +86,35 @@ describe("init", () => {
     // sessions/index.json 可能不再由 v2 维护
     const config = JSON.parse(
       readFileSync(join(dir, ".memory/config.json"), "utf8"),
-    ) as { version: number; assistants: string[]; llm?: unknown; consolidate?: unknown };
-    expect(config.version).toBe(2); // v2: version=2
+    ) as { assistants: string[]; llm?: unknown; consolidate?: unknown; version?: unknown };
+    expect(config.version).toBeUndefined();
     expect(Array.isArray(config.assistants)).toBe(true);
     // v2: 包含 llm 和 consolidate 默认字段
     expect(config.llm).toBeDefined();
     expect(config.consolidate).toBeDefined();
   });
 
-  it("writes config.json v1 file backend", () => {
+  it("writes config.json with mcp defaults", () => {
     const dir = makeTempDir();
     runCliInDir(dir, ["init", "-y"]);
 
     const config = JSON.parse(
       readFileSync(join(dir, ".memory/config.json"), "utf8"),
     ) as {
-      version: number;
-      storage: { backend: string; mcp?: unknown };
+      storage?: unknown;
+      mcp?: {
+        enabled: boolean;
+        serverUrl: string;
+        projectId: string;
+        userId: string;
+      };
       assistants: string[];
       debug: boolean;
+      version?: unknown;
     };
-    expect(config.version).toBe(2); // v2: version=2
-    expect(config.storage.backend).toBe("file");
-    expect(config.storage.mcp).toMatchObject({
+    expect(config.version).toBeUndefined();
+    expect(config.storage).toBeUndefined();
+    expect(config.mcp).toMatchObject({
       enabled: false,
       serverUrl: "http://localhost:3000",
       projectId: "",
@@ -136,16 +142,16 @@ describe("init", () => {
     const config = JSON.parse(
       readFileSync(join(dir, ".memory/config.json"), "utf8"),
     ) as {
-      storage: {
-        mcp?: {
-          enabled: boolean;
-          serverUrl: string;
-          projectId: string;
-          userId: string;
-        };
+      mcp?: {
+        enabled: boolean;
+        serverUrl: string;
+        projectId: string;
+        userId: string;
       };
+      storage?: unknown;
     };
-    expect(config.storage.mcp).toMatchObject({
+    expect(config.storage).toBeUndefined();
+    expect(config.mcp).toMatchObject({
       enabled: true,
       serverUrl: "http://localhost:3000/mcp",
       projectId,
@@ -191,8 +197,6 @@ describe("init", () => {
     writeFileSync(
       join(dir, ".memory", "config.json"),
       `${JSON.stringify({
-        version: 2,
-        storage: { backend: "file" },
         assistants: ["claude-code"],
         debug: false,
         llm: {
@@ -245,8 +249,6 @@ describe("init", () => {
     writeFileSync(
       configPath,
       `${JSON.stringify({
-        version: 1,
-        storage: { backend: "file" },
         assistants: ["claude-code"],
       })}\n`,
       "utf8",

@@ -155,14 +155,14 @@ function printConfigSummary(repoRoot: string): void {
     console.log("  LLM 配置不完整：目前无法使用 flush / autoFlush 整理记忆");
   }
 
-  const mcp = config.storage.mcp;
+  const mcp = config.mcp;
   const projectBinding = readProjectBindingAtRepo(repoRoot);
   if (mcp?.enabled && projectBinding) {
     console.log(
       `  mcp: enabled (server=${mcp.serverUrl}, projectId=${projectBinding.projectId})`,
     );
     console.log(
-      "  使用 MCP 工具时，请从 .memory/config.json 的 storage.mcp.projectId 读取并传入 add_memory / search_memories",
+      "  使用 MCP 工具时，请从 .memory/config.json 的 mcp.projectId 读取并传入 add_memory / search_memories",
     );
   } else {
     console.log("  mcp: off");

@@ -102,23 +102,21 @@ npx @riconext/hermes-repo flush
 
 ## MCP 团队记忆（可选）
 
-若 init 时启用了 MCP 团队记忆，`.memory/config.json` 的 `storage.mcp` 会包含项目绑定：
+若 init 时启用了 MCP 团队记忆，`.memory/config.json` 的 `mcp` 会包含项目绑定：
 
 ```json
 {
-  "storage": {
-    "mcp": {
-      "enabled": true,
-      "serverUrl": "http://localhost:3000/mcp",
-      "projectId": "00000000-0000-4000-8000-000000000001"
-    }
+  "mcp": {
+    "enabled": true,
+    "serverUrl": "http://localhost:3000/mcp",
+    "projectId": "00000000-0000-4000-8000-000000000001"
   }
 }
 ```
 
 **使用 Hermes MCP 工具时：**
 
-1. 先读取 `.memory/config.json` 的 `storage.mcp.projectId`
+1. 先读取 `.memory/config.json` 的 `mcp.projectId`
 2. 调用 `add_memory` / `search_memories` 时必须传入该 `projectId`
 3. 不确定项目列表时，可先调用 `list_projects`
 

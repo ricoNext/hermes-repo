@@ -30,7 +30,7 @@ describe("cli promote (removed in v2)", () => {
     mkdirSync(join(dir, ".memory"), { recursive: true });
     writeFileSync(
       join(dir, ".memory", "config.json"),
-      '{"version":1,"storage":{"backend":"file"},"assistants":["claude-code"],"debug":false}\n',
+      '{"assistants":["claude-code"],"debug":false}\n',
     );
 
     const { status, stderr } = runCli(["promote", "-C", dir], dir);

@@ -25,9 +25,15 @@ function isInitialized(targetDir: string): boolean {
   }
   try {
     const config = JSON.parse(readFileSync(configPath, "utf8")) as {
-      version?: number;
+      assistants?: unknown;
+      llm?: unknown;
+      mcp?: unknown;
     };
-    return typeof config.version === "number" && config.version >= 1;
+    return (
+      Array.isArray(config.assistants) ||
+      (config.llm !== null && typeof config.llm === "object") ||
+      (config.mcp !== null && typeof config.mcp === "object")
+    );
   } catch {
     return false;
   }
@@ -119,15 +125,15 @@ async function gatherMcpOptions(
   if (existsSync(existingConfigPath)) {
     try {
       const config = JSON.parse(readFileSync(existingConfigPath, "utf8")) as {
-        storage?: { mcp?: { enabled?: boolean; serverUrl?: string; userId?: string } };
+        mcp?: { enabled?: boolean; serverUrl?: string; userId?: string };
       };
-      if (typeof config.storage?.mcp?.serverUrl === "string") {
-        existingServerUrl = config.storage.mcp.serverUrl;
+      if (typeof config.mcp?.serverUrl === "string") {
+        existingServerUrl = config.mcp.serverUrl;
       }
-      if (typeof config.storage?.mcp?.userId === "string") {
-        existingUserId = config.storage.mcp.userId;
+      if (typeof config.mcp?.userId === "string") {
+        existingUserId = config.mcp.userId;
       }
-      if (config.storage?.mcp?.enabled === true) {
+      if (config.mcp?.enabled === true) {
         existingEnabled = true;
       }
     } catch {
@@ -205,10 +211,8 @@ export async function gatherInitOptions(
     validate: (value) => value.length > 0 || "请至少选择一项",
   })) as AssistantId[];
 
-  const includeExampleTemplates = await confirm({
-    message: "是否写入 capture 示例模板到 .memory/templates/？",
-    default: true,
-  });
+  // 固定写入 capture 示例模板，不再询问
+  const includeExampleTemplates = true;
 
   const llm = await gatherLlmOptions(targetDir);
   const mcp = await gatherMcpOptions(targetDir);

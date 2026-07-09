@@ -7,7 +7,6 @@ import {
   DEFAULT_LLM_MODEL,
   DEFAULT_LLM_TIMEOUT_MS,
   DEFAULT_LLM_MAX_INPUT_CHARS,
-  defaultDisabledLlmConfig,
 } from "./llmConfig.js";
 import type {
   ConsolidateConfig,
@@ -15,15 +14,17 @@ import type {
   LlmConfigV2,
   McpConfig,
   RepoContext,
-  StorageConfig,
 } from "./types.js";
-import {
-  DEFAULT_MCP_SERVER_URL,
-  defaultDisabledMcpConfig,
-} from "./mcpConfig.js";
+import { DEFAULT_MCP_SERVER_URL } from "./mcpConfig.js";
 
 function isAssistantId(value: unknown): value is AssistantId {
   return typeof value === "string";
+}
+
+function asObject(value: unknown): Record<string, unknown> {
+  return value && typeof value === "object" && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
+    : {};
 }
 
 function parseLlmConfig(raw: Record<string, unknown>): LlmConfigV2 {
@@ -75,14 +76,7 @@ function parseConsolidateConfig(raw: Record<string, unknown>): ConsolidateConfig
 }
 
 function parseMcpConfig(raw: Record<string, unknown>): McpConfig {
-  const storage =
-    raw.storage && typeof raw.storage === "object" && !Array.isArray(raw.storage)
-      ? (raw.storage as Record<string, unknown>)
-      : {};
-  const mcp =
-    storage.mcp && typeof storage.mcp === "object" && !Array.isArray(storage.mcp)
-      ? (storage.mcp as Record<string, unknown>)
-      : {};
+  const mcp = asObject(raw.mcp);
 
   const enabled = mcp.enabled === true;
   const serverUrl = typeof mcp.serverUrl === "string" && mcp.serverUrl.trim()
@@ -95,12 +89,9 @@ function parseMcpConfig(raw: Record<string, unknown>): McpConfig {
     ? mcp.userId.trim()
     : "";
 
-  // 解析 sync 配置
-  const syncConfig = mcp.sync && typeof mcp.sync === "object" ? mcp.sync as Record<string, unknown> : {};
-  const onFlush = syncConfig.onFlush && typeof syncConfig.onFlush === "object" ? syncConfig.onFlush as Record<string, unknown> : {};
-
-  // 解析 deduplication 配置
-  const dedupConfig = mcp.deduplication && typeof mcp.deduplication === "object" ? mcp.deduplication as Record<string, unknown> : {};
+  const syncConfig = asObject(mcp.sync);
+  const onFlush = asObject(syncConfig.onFlush);
+  const dedupConfig = asObject(mcp.deduplication);
 
   return {
     enabled,
@@ -124,63 +115,25 @@ function parseMcpConfig(raw: Record<string, unknown>): McpConfig {
   };
 }
 
-function parseStorageConfig(raw: Record<string, unknown>): StorageConfig {
-  const storage =
-    raw.storage && typeof raw.storage === "object" && !Array.isArray(raw.storage)
-      ? (raw.storage as Record<string, unknown>)
-      : {};
-
-  return {
-    backend: storage.backend === "file" ? "file" : "file",
-    mcp: parseMcpConfig(raw),
-  };
-}
-
 export function readConfigAtRepo(repoRoot: string): HermesConfig | null {
   const configPath = join(repoRoot, ".memory", "config.json");
   try {
     const raw = JSON.parse(readFileSync(configPath, "utf8")) as Record<string, unknown>;
-    const version = raw.version;
-
-    // v2 配置
-    if (version === 2) {
-      const assistants = Array.isArray(raw.assistants)
-        ? raw.assistants.filter(isAssistantId)
-        : [];
-      return {
-        version: 2,
-        storage: parseStorageConfig(raw),
-        assistants,
-        debug: raw.debug === true,
-        llm: parseLlmConfig(raw),
-        consolidate: parseConsolidateConfig(raw),
-      };
+    if (!raw || typeof raw !== "object" || Array.isArray(raw)) {
+      return null;
     }
 
-    // v1 兼容（自动升级字段）
-    if (version === 1 || version === undefined) {
-      const assistants = Array.isArray(raw.assistants)
-        ? raw.assistants.filter(isAssistantId)
-        : [];
-      return {
-        version: 2, // 自动升级为 v2
-        storage: { backend: "file", mcp: defaultDisabledMcpConfig() },
-        assistants,
-        debug: raw.debug === true,
-        llm: defaultDisabledLlmConfig(),
-        consolidate: {
-          autoArchiveDays: 30,
-          autoFlush: {
-            enabled: true,
-            minPendingSessions: 3,
-            minIntervalMinutes: 30,
-            maxPendingChars: 20_000,
-          },
-        },
-      };
-    }
+    const assistants = Array.isArray(raw.assistants)
+      ? raw.assistants.filter(isAssistantId)
+      : [];
 
-    return null; // 不支持的版本
+    return {
+      assistants,
+      debug: raw.debug === true,
+      llm: parseLlmConfig(raw),
+      consolidate: parseConsolidateConfig(raw),
+      mcp: parseMcpConfig(raw),
+    };
   } catch {
     return null;
   }

@@ -41,23 +41,17 @@ export interface McpConfig {
   };
 }
 
-export interface StorageConfig {
-  backend: string;
-  mcp?: McpConfig;
-}
-
 export interface ProjectBinding {
   projectId: string;
 }
 
-/** v2 配置（含 LLM 和 consolidate 节） */
+/** Hermes 配置（含 LLM 和 consolidate 节） */
 export interface HermesConfig {
-  version: number;
-  storage: StorageConfig;
   assistants: AssistantId[];
   debug: boolean;
   llm: LlmConfigV2;
   consolidate: ConsolidateConfig;
+  mcp: McpConfig;
 }
 
 export interface RepoContext {

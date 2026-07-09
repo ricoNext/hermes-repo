@@ -38,14 +38,14 @@ export async function runFlushCommandWithMCP(
   console.log('开始整理记忆...\n');
 
   const mcpEnabled =
-    ctx.config.storage?.mcp?.enabled &&
-    ctx.config.storage?.mcp?.sync?.mode !== 'off' &&
+    ctx.config.mcp?.enabled &&
+    ctx.config.mcp?.sync?.mode !== 'off' &&
     !opts.noSync;
 
   // ────────── 步骤 1: 拉取团队记忆（前置）──────────
   let teamMemories: TeamMemory[] = [];
 
-  if (mcpEnabled && ctx.config.storage?.mcp?.sync?.onFlush?.pull) {
+  if (mcpEnabled && ctx.config.mcp?.sync?.onFlush?.pull) {
     console.log('1/4 正在拉取团队记忆...');
     try {
       teamMemories = await pullFromMCP(ctx);
@@ -91,7 +91,7 @@ export async function runFlushCommandWithMCP(
   );
 
   // ────────── 步骤 3: 推送新记忆到 MCP ──────────
-  if (mcpEnabled && ctx.config.storage?.mcp?.sync?.onFlush?.push && result.knowledgeFiles) {
+  if (mcpEnabled && ctx.config.mcp?.sync?.onFlush?.push && result.knowledgeFiles) {
     console.log('3/4 正在推送记忆到 MCP...');
     try {
       const pushed = await pushToMCP(ctx, result.knowledgeFiles);

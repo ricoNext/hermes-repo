@@ -7,7 +7,7 @@ export function initPromoteRepo(dir: string): void {
   mkdirSync(join(dir, ".memory", "templates"), { recursive: true });
   writeFileSync(
     join(dir, ".memory", "config.json"),
-    `${JSON.stringify({ version: 1, storage: { backend: "file" }, assistants: ["claude-code"], debug: false })}\n`,
+    `${JSON.stringify({ assistants: ["claude-code"], debug: false })}\n`,
   );
   writeFileSync(
     join(dir, ".memory", "templates", "PROMOTE_PR.md"),

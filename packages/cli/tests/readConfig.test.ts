@@ -20,8 +20,6 @@ function initRepo(
 ): void {
   mkdirSync(join(dir, ".memory"), { recursive: true });
   const body: Record<string, unknown> = {
-    version: 1,
-    storage: { backend: "file" },
     assistants,
   };
   if (debug !== undefined) {
@@ -73,8 +71,6 @@ describe("readConfig", () => {
     writeFileSync(
       join(root, ".memory", "config.json"),
       `${JSON.stringify({
-        version: 2,
-        storage: { backend: "file" },
         assistants: ["claude-code"],
         consolidate: {
           autoFlush: {
@@ -99,8 +95,6 @@ describe("readConfig", () => {
     writeFileSync(
       join(root, ".memory", "config.json"),
       `${JSON.stringify({
-        version: 2,
-        storage: { backend: "file" },
         assistants: ["claude-code"],
         consolidate: {
           autoFlush: {
@@ -112,6 +106,32 @@ describe("readConfig", () => {
     );
 
     expect(readConfigAtRepo(root)?.consolidate.autoFlush.enabled).toBe(false);
+  });
+
+  it("readConfigAtRepo reads top-level mcp", () => {
+    const root = mkdtempSync(join(tmpdir(), "hermes-cfg-"));
+    tempDirs.push(root);
+    mkdirSync(join(root, ".memory"), { recursive: true });
+    writeFileSync(
+      join(root, ".memory", "config.json"),
+      `${JSON.stringify({
+        assistants: ["claude-code"],
+        mcp: {
+          enabled: true,
+          serverUrl: "http://example.test",
+          projectId: "00000000-0000-4000-8000-000000000001",
+          userId: "00000000-0000-4000-8000-000000000002",
+        },
+      })}\n`,
+      "utf8",
+    );
+
+    expect(readConfigAtRepo(root)?.mcp).toMatchObject({
+      enabled: true,
+      serverUrl: "http://example.test",
+      projectId: "00000000-0000-4000-8000-000000000001",
+      userId: "00000000-0000-4000-8000-000000000002",
+    });
   });
 
   it("loadRepoContext returns null when missing", () => {

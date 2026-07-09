@@ -11,7 +11,7 @@ import {
 } from "../config/llmConfig.js";
 import { defaultDisabledMcpConfig } from "../config/mcpConfig.js";
 
-/** v2: init 每次都会写入的完整 config 字段（已有自定义值优先保留） */
+/** init 每次都会写入的完整 config 字段（已有自定义值优先保留） */
 const DEFAULT_LLM = {
   enabled: false,
   provider: "openai",
@@ -31,6 +31,12 @@ const DEFAULT_CONSOLIDATE = {
     maxPendingChars: 20_000,
   },
 };
+
+function asObject(value: unknown): Record<string, unknown> {
+  return value && typeof value === "object" && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
+    : {};
+}
 
 export function mergeConfigForInit(
   repoRoot: string,
@@ -53,48 +59,19 @@ export function mergeConfigForInit(
     }
   }
 
-  const prevStorage =
-    existing.storage &&
-    typeof existing.storage === "object" &&
-    !Array.isArray(existing.storage)
-      ? (existing.storage as Record<string, unknown>)
-      : {};
+  const prevLlm = asObject(existing.llm);
+  const prevConsolidate = asObject(existing.consolidate);
+  const prevAutoFlush = asObject(prevConsolidate.autoFlush);
+  const prevMcp = asObject(existing.mcp);
 
-  // v2: 合并 llm 和 consolidate 字段（用户已配置的优先保留）
-  const prevLlm =
-    existing.llm && typeof existing.llm === "object" && !Array.isArray(existing.llm)
-      ? (existing.llm as Record<string, unknown>)
-      : {};
-  const prevConsolidate =
-    existing.consolidate && typeof existing.consolidate === "object" && !Array.isArray(existing.consolidate)
-      ? (existing.consolidate as Record<string, unknown>)
-      : {};
-  const prevAutoFlush =
-    prevConsolidate.autoFlush &&
-    typeof prevConsolidate.autoFlush === "object" &&
-    !Array.isArray(prevConsolidate.autoFlush)
-      ? (prevConsolidate.autoFlush as Record<string, unknown>)
-      : {};
-
-  const prevMcp =
-    prevStorage.mcp &&
-    typeof prevStorage.mcp === "object" &&
-    !Array.isArray(prevStorage.mcp)
-      ? (prevStorage.mcp as Record<string, unknown>)
-      : {};
+  const {
+    version: _ignoredVersion,
+    storage: _ignoredStorage,
+    ...existingWithoutLegacy
+  } = existing;
 
   const merged: Record<string, unknown> = {
-    ...existing,
-    version: 2,
-    storage: {
-      ...prevStorage,
-      backend: "file",
-      mcp: {
-        ...defaultDisabledMcpConfig(),
-        ...prevMcp,
-        ...(mcpOverride ?? {}),
-      },
-    },
+    ...existingWithoutLegacy,
     assistants,
     debug: existing.debug === true,
     llm: { ...DEFAULT_LLM, ...prevLlm, ...(llmOverride ?? {}) },
@@ -105,6 +82,11 @@ export function mergeConfigForInit(
         ...DEFAULT_CONSOLIDATE.autoFlush,
         ...prevAutoFlush,
       },
+    },
+    mcp: {
+      ...defaultDisabledMcpConfig(),
+      ...prevMcp,
+      ...(mcpOverride ?? {}),
     },
   };
 

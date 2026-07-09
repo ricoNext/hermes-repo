@@ -17,18 +17,10 @@ import { DEFAULT_MCP_SERVER_URL } from "../config/mcpConfig.js";
 
 export { shouldWriteFile } from "./scaffoldWrite.js";
 
-/** 生成 v2 config.json 内容 */
+/** 生成 config.json 内容 */
 export function buildConfigJson(assistants: AssistantId[]): string {
   return `${JSON.stringify(
     {
-      version: 2,
-      storage: {
-        backend: "file",
-        mcp: {
-          enabled: false,
-          serverUrl: DEFAULT_MCP_SERVER_URL,
-        },
-      },
       assistants,
       debug: false,
       llm: {
@@ -48,6 +40,10 @@ export function buildConfigJson(assistants: AssistantId[]): string {
           minIntervalMinutes: 30,
           maxPendingChars: 20_000,
         },
+      },
+      mcp: {
+        enabled: false,
+        serverUrl: DEFAULT_MCP_SERVER_URL,
       },
     },
     null,
@@ -123,7 +119,6 @@ export function writeScaffoldFiles(
     ".memory/consolidate-state.json",
     `${JSON.stringify(
       {
-        version: 1,
         lastConsolidatedAt: null,
         stats: {
           totalCapturesProcessed: 0,

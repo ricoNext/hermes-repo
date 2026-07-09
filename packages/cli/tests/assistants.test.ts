@@ -68,8 +68,6 @@ describe("mergeAssistants", () => {
     writeFileSync(
       join(dir, ".memory/config.json"),
       `${JSON.stringify({
-        version: 1,
-        storage: { backend: "file" },
         assistants: ["legacy-id"],
       })}\n`,
       "utf8",

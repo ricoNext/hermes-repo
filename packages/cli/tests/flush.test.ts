@@ -19,8 +19,6 @@ function seedV2(dir: string): void {
   writeFileSync(
     join(dir, ".memory", "config.json"),
     `${JSON.stringify({
-      version: 1,
-      storage: { backend: "file" },
       assistants: ["claude-code"],
       debug: false,
       consolidate: {
@@ -91,7 +89,6 @@ describe("flush CLI (v2)", () => {
     seedV2(dir);
     const configPath = join(dir, ".memory", "config.json");
     const config = JSON.parse(readFileSync(configPath, "utf8")) as Record<string, unknown>;
-    config.version = 2;
     config.debug = true;
     config.llm = {
       enabled: true,

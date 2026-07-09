@@ -32,8 +32,6 @@ function makeRepo(assistants: string[]): string {
   writeFileSync(
     join(dir, ".memory", "config.json"),
     `${JSON.stringify({
-      version: 1,
-      storage: { backend: "file" },
       assistants,
     })}\n`,
     "utf8",

@@ -32,8 +32,6 @@ function makeRepo(
   writeFileSync(
     join(dir, ".memory", "config.json"),
     `${JSON.stringify({
-      version: 1,
-      storage: { backend: "file" },
       assistants,
       debug,
     })}\n`,

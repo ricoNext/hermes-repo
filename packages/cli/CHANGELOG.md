@@ -1,5 +1,25 @@
 # Changelog
 
+## 1.5.0
+
+### Minor Changes
+
+- refactor: 简化 CLI 配置结构
+
+  **Breaking Changes:**
+
+  - 移除 `.memory/config.json` 的 `version` 字段与版本兼容分支
+  - 移除无效的 `storage.backend` 配置
+  - 将 `storage.mcp` 提升为顶层 `mcp`
+  - `consolidate-state.json` 不再写入/依赖 `version` 字段
+
+  **迁移指南:**
+
+  1. 将配置中的 `storage.mcp` 改为顶层 `mcp`
+  2. 删除 `version`、`storage.backend` 与空的 `storage` 对象
+  3. 或重新运行 `npx @riconext/hermes-repo init` 生成新配置
+
+
 ## 1.3.13
 
 ### Patch Changes

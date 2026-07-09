@@ -21,7 +21,7 @@ function makeInitializedRepo(): string {
   mkdirSync(join(dir, ".memory", "rules"), { recursive: true });
   writeFileSync(
     join(dir, ".memory", "config.json"),
-    JSON.stringify({ version: 1, storage: { backend: "file" }, assistants: ["codebuddy"], debug: true }) + "\n",
+    JSON.stringify({ assistants: ["codebuddy"], debug: true }) + "\n",
     "utf8",
   );
   return dir;

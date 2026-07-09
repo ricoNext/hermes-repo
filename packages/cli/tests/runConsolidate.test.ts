@@ -26,8 +26,6 @@ function makeV2Repo(overrides?: Partial<HermesConfig>): string {
   mkdirSync(join(dir, ".memory", "rules"), { recursive: true });
 
   const config: HermesConfig = {
-    version: 1,
-    storage: { backend: "file" },
     assistants: ["claude-code"],
     debug: true,
     llm: {
@@ -46,6 +44,23 @@ function makeV2Repo(overrides?: Partial<HermesConfig>): string {
         minPendingSessions: 3,
         minIntervalMinutes: 30,
         maxPendingChars: 20_000,
+      },
+    },
+    mcp: {
+      enabled: false,
+      serverUrl: "http://localhost:3000",
+      projectId: "",
+      userId: "",
+      sync: {
+        mode: "auto",
+        onFlush: { push: true, pull: true },
+        retries: 3,
+        timeout: 30000,
+      },
+      deduplication: {
+        enabled: true,
+        strategy: "team-first",
+        similarityThreshold: 0.9,
       },
     },
     ...overrides,

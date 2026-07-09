@@ -73,19 +73,52 @@ npx @riconext/hermes-repo init
 
 如果在 init 阶段配置 LLM，hermes-repo 会写入 `.memory/config.json`，并在结束摘要中确认 `flush` 是否可用。LLM 不完整时，`capture` 和 `inject` 仍可用，但 `flush` / `autoFlush` 暂时无法整理记忆。
 
-非交互初始化：
+其他 init 参数：
+
+ | 参数 | 说明 |
+  |------|------|
+  | `-y, --yes` | 非交互模式，使用默认选项（跳过所有询问） |
+  | `-f, --force` | 覆盖已存在的脚手架文件（不删除 captures 等内容） |
+  | `-C, --cwd <dir>` | 目标目录，默认为当前工作目录 |
+  | `--tools <ids>` | 逗号分隔的助手 id，如 `claude-code,cursor`（**必须与 `-y` 合用**） |
+  | `--mcp-project-id <id>` | 非交互模式：启用 MCP 并绑定团队项目 UUID |
+  | `--mcp-server-url <url>` | 非交互模式：MCP 服务地址，默认 `http://localhost:3000/mcp` |
+  | `--mcp-user-id <id>` | 非交互模式：MCP 用户 UUID，用于推送记忆时关联用户 |
+
+使用示例：
 
 ```bash
-npx @riconext/hermes-repo init -y --tools claude-code
-npx @riconext/hermes-repo init -y --tools claude-code,cursor,codebuddy,codex
+# 交互式初始化
+  hermes-repo init
+
+  # 非交互模式，使用默认助手
+  hermes-repo init -y
+
+  # 非交互模式，指定多个助手
+  hermes-repo init -y --tools claude-code,cursor
+
+  # 非交互模式 + 启用 MCP
+  hermes-repo init -y \
+    --mcp-project-id "uuid-here" \
+    --mcp-user-id "user-uuid-here" \
+    --mcp-server-url "http://localhost:3000/mcp"
+
+  # 强制覆盖已有文件
+  hermes-repo init -y -f
+
+  # 在指定目录初始化
+  hermes-repo init -y -C /path/to/repo
 ```
 
-`-y` 会跳过 LLM 配置询问。如需使用 `flush` 或 `autoFlush`，请之后手动编辑 `.memory/config.json`。
+  注意：
+  - --tools 参数需要与 -y 一起使用，否则会报错
+  - MCP 相关参数只在非交互模式下有效
+
 
 之后正常使用助手：
 
-1. 会话开始时，hook 运行 `inject`。
-2. 会话结束时，hook 运行 `capture`。
+1. 会话开始时，hook 运行 `inject` 注入 `MEMORY.md` 导航摘要。
+2. 会话结束时，hook 运行 `capture` 进行原始会话捕获。
 3. 积累了原始捕获且已配置 LLM 后，可等待 `autoFlush` 自动整理，或手动执行：
 
 ```bash
@@ -186,6 +219,12 @@ npx @riconext/hermes-repo capture-llm --flush
 ## MCP 服务器使用
 
 hermes-repo 提供了 MCP 服务器（`@riconext/hermes-mcp-server`）用于团队级别的记忆管理。它暴露 MCP 工具用于列出项目、添加记忆、搜索和提升记忆，同时提供 REST API 供 Web UI 使用。
+
+
+MCP 服务会在两个地方使用： 
+
+- 执行 `flush` 时：程序会向 MCP 服务拉取团队记忆并推送个人记忆
+- 对话中：可以直接在对话中让编程工具调用 MCP 服务提供的工具拉取团队记忆到项目中或者推送记忆到服务中等
 
 ### MCP 工具
 

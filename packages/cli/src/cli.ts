@@ -45,7 +45,7 @@ function main(): void {
     )
     .option(
       "--mcp-server-url <url>",
-      "非交互：MCP 服务地址，默认 http://localhost:3000/mcp",
+      "非交互：MCP 服务地址，默认 http://localhost:3000",
     )
     .option(
       "--mcp-user-id <id>",

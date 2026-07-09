@@ -78,8 +78,6 @@ describe("llm config", () => {
     writeFileSync(
       join(repo, ".memory/config.json"),
       `${JSON.stringify({
-        version: 2,
-        storage: { backend: "file" },
         assistants: ["claude-code"],
         llm: {
           enabled: true,

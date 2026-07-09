@@ -35,7 +35,7 @@ export async function pushToMCP(
   ctx: RepoContext,
   knowledgeFiles: KnowledgeFileOutput[]
 ): Promise<number> {
-  const mcp = ctx.config.storage?.mcp;
+  const mcp = ctx.config.mcp;
   if (!mcp?.enabled) return 0;
 
   const client = createMCPClient({
@@ -87,7 +87,7 @@ function inferType(targetPath: string): string {
 // ─── Pull ───────────────────────────────────────
 
 export async function pullFromMCP(ctx: RepoContext): Promise<TeamMemory[]> {
-  const mcp = ctx.config.storage?.mcp;
+  const mcp = ctx.config.mcp;
   if (!mcp?.enabled) return [];
 
   const client = createMCPClient({

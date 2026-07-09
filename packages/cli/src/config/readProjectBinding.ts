@@ -29,7 +29,7 @@ function readLegacyProjectBinding(repoRoot: string): ProjectBinding | null {
 export function readProjectBindingAtRepo(
   repoRoot: string,
 ): ProjectBinding | null {
-  const mcp = readConfigAtRepo(repoRoot)?.storage.mcp;
+  const mcp = readConfigAtRepo(repoRoot)?.mcp;
   const projectId = mcp?.projectId?.trim() ?? "";
   if (projectId) {
     return { projectId };

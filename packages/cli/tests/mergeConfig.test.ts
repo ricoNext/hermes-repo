@@ -21,13 +21,13 @@ describe("mergeConfigForInit", () => {
     const { content, action } = mergeConfigForInit(root, ["claude-code"]);
     expect(action).toBe("created");
     const config = JSON.parse(content) as {
-      version: number;
       assistants: string[];
       debug: boolean;
       llm?: Record<string, unknown>;
       consolidate?: Record<string, unknown>;
+      version?: unknown;
     };
-    expect(config.version).toBe(2); // v2: version=2
+    expect(config.version).toBeUndefined();
     expect(config.assistants).toEqual(["claude-code"]);
     expect(config.debug).toBe(false);
     // v2: 包含 llm 和 consolidate 默认字段
@@ -41,6 +41,8 @@ describe("mergeConfigForInit", () => {
       minIntervalMinutes: 30,
       maxPendingChars: 20_000,
     });
+    expect((config as { mcp?: { enabled?: boolean } }).mcp?.enabled).toBe(false);
+    expect((config as { storage?: unknown }).storage).toBeUndefined();
   });
 
   it("merges init fields into existing config and preserves debug true", () => {
@@ -50,8 +52,6 @@ describe("mergeConfigForInit", () => {
     writeFileSync(
       join(root, ".memory", "config.json"),
       `${JSON.stringify({
-        version: 1,
-        storage: { backend: "file" },
         assistants: ["legacy-id"],
         debug: true,
         customFlag: "keep-me",
@@ -72,6 +72,9 @@ describe("mergeConfigForInit", () => {
     expect(config.assistants).toEqual(["claude-code", "legacy-id"]);
     expect(config.debug).toBe(true);
     expect(config.customFlag).toBe("keep-me");
+    expect((config as { version?: unknown }).version).toBeUndefined();
+    expect((config as { storage?: unknown }).storage).toBeUndefined();
+    expect((config as { mcp?: { enabled?: boolean } }).mcp?.enabled).toBe(false);
   });
 
   it("adds debug false when missing on re-init merge", () => {
@@ -81,8 +84,6 @@ describe("mergeConfigForInit", () => {
     writeFileSync(
       join(root, ".memory", "config.json"),
       `${JSON.stringify({
-        version: 1,
-        storage: { backend: "file" },
         assistants: ["claude-code"],
       })}\n`,
       "utf8",
@@ -100,8 +101,6 @@ describe("mergeConfigForInit", () => {
     writeFileSync(
       join(root, ".memory", "config.json"),
       `${JSON.stringify({
-        version: 2,
-        storage: { backend: "file" },
         assistants: ["claude-code"],
         consolidate: {
           autoArchiveDays: 14,
@@ -162,4 +161,5 @@ describe("mergeConfigForInit", () => {
       apiKey: "sk-live",
     });
   });
+
 });

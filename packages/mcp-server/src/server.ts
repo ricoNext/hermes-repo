@@ -115,7 +115,7 @@ function getSession(context: { session?: SessionData }): SessionData {
 const projectIdSchema = z
   .string()
   .uuid()
-  .describe("目标项目 ID（来自仓库 .memory/config.json 的 storage.mcp.projectId）");
+  .describe("目标项目 ID（来自仓库 .memory/config.json 的 mcp.projectId）");
 
 export function createServer(): FastMCP<SessionData> {
   const server = new FastMCP<SessionData>({

@@ -222,7 +222,6 @@ export async function runConsolidate(
 
     debugLog(debug === true, "consolidate", "updating consolidate state");
     writeConsolidateState(repoRoot, {
-      version: 2,
       lastConsolidatedAt: new Date().toISOString(),
       stats: {
         totalCapturesProcessed:
