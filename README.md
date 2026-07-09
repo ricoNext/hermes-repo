@@ -1,95 +1,116 @@
-# hermes-repo
-
-**Give AI coding assistants repo-local project memory.** hermes-repo wires assistant hooks into a Git repository so useful session context can be captured, consolidated into `.memory/`, and injected into future sessions.
+# Product Introduction
 
 npm: `@riconext/hermes-repo` · Inspired by [Hermes Agent](https://github.com/NousResearch/hermes) memory & skill loop · [中文](README.zh-CN.md)
 
-> **Monorepo**：`packages/cli`（CLI，已发布 npm）、`packages/mcp-server`（MCP 服务，规划中）、`packages/ui`（管理界面，规划中）。详见 [packages/README.md](packages/README.md)。
-
 ```text
- _                                               
+ _
 | |__   ___ _ __ _ __ ___   ___  ___        _ __ ___ _ __   ___
 | '_ \ / _ \ '__| '_ ' _ \ / _ \/ __|      | '__/ _ \ '_ \ / _ \
 | | | |  __/ |  | | | | | |  __/\__ \      | | |  __/ |_) | (_) |
 |_| |_|\___|_|  |_| |_| |_|\___||___/      |_|  \___| .__/ \___/
-                                                    |_|          
+                                                    |_|
 
 repo-local memory for AI coding assistants
 capture -> consolidate -> inject
 ```
 
-![](https://neptune-ipc.oss-cn-shenzhen.aliyuncs.com/img/20260521182425723.png)
+Have you run into this: you open a new AI coding session, and the first thing you do is not write code — you re-explain the project conventions.
 
-## Features
+"This repo uses bun."
 
-| Capability | Behavior |
-|------------|----------|
-| Assistant setup | `init` creates `.memory/`, merges `AGENTS.md`, and writes hook config for selected assistants |
-| Session capture | Stop hooks append session summaries to `.memory/captures/raw/session-*.md` |
-| Session injection | SessionStart hooks print `.memory/MEMORY.md` plus all `.memory/rules/*.md` content |
-| LLM capture upgrade | When LLM is configured, `capture-llm --flush` processes queued per-session upgrade jobs |
-| Consolidation | `flush` uses an OpenAI-compatible LLM to turn raw captures into knowledge files and `MEMORY.md` |
-| Auto flush | With complete LLM config, capture can trigger background `flush` when thresholds are met |
-| Multi-assistant support | Claude Code, Cursor, CodeBuddy, and OpenAI Codex adapters |
+"The API client lives here."
 
-## Why
+"The root cause of that bug last time wasn't a type issue — it was a permission boundary."
 
-AI coding sessions repeatedly lose local project context:
+That information was already said in some earlier chat, then vanished in the next session. `hermes-repo` exists to fix that: **put AI coding assistants' project memory back into the Git repository.**
 
-- Conventions like package manager, naming style, or API shape get restated in every new chat.
-- A bug explanation from last week stays buried in transcript history.
+![Context loss in AI coding sessions](https://neptune-ipc.oss-cn-shenzhen.aliyuncs.com/img/20260708173721600.png)
 
-hermes-repo keeps working memory inside the repo: hooks capture sessions, LLM consolidates them into structured knowledge, and future sessions inject that knowledge automatically.
+## What is hermes-repo
 
-## Why LLM Is Required
+`hermes-repo` is a repo-local memory tool. It wires hooks from Claude Code, Cursor, CodeBuddy, OpenAI Codex, and similar assistants into the current repository, so project context forms a closed loop:
 
-hermes-repo has two stages:
+- At session end, capture valuable context.
+- When consolidation is needed, use an OpenAI-compatible LLM to turn raw records into structured knowledge.
+- At the next session start, automatically inject project memory into the assistant.
 
-| Stage | Commands | LLM required? |
-|-------|----------|---------------|
-| Capture & inject | `capture`, `inject` | No |
-| Consolidate | `flush`, `capture-llm`, `autoFlush` | Yes |
+In one sentence: **it lets the AI assistant remember not just this chat, but this repository.**
 
-`capture` only appends session transcripts to `.memory/captures/raw/`. That is raw evidence, not usable project memory.
+## Advantages over built-in tool memory
 
-`inject` loads `MEMORY.md` and `rules/*.md`. Those files are created or updated by `flush`, which calls an OpenAI-compatible LLM to classify content, write knowledge files, and regenerate the navigation summary.
+Many AI coding tools already ship memory, rules, or project context. Those features are useful, but they are usually locked to one product, one account, or one editor environment. `hermes-repo` takes a different approach: it pulls the memory layer out of any specific tool and puts it in the project repository itself.
 
-Without LLM configuration, the hooks still run, but memory never gets consolidated. Configure LLM during interactive `init`, or edit `.memory/config.json` afterward, to make the memory loop work.
+That brings several direct advantages:
 
-## Five-Minute Start
+- **Works across assistants**: the same project memory can serve Claude Code, Cursor, CodeBuddy, and OpenAI Codex — not locked to a single tool.
+- **Travels with the Git repo**: important project rules, workflows, and architecture decisions can live in `.memory/` and evolve with the code.
+- **Auditable and editable**: memory is not a black box. You can open the Markdown files, see what was recorded, and correct it by hand.
+- **Separates local privacy from team knowledge**: secrets, raw transcripts, and processing state stay local and are ignored by default; consolidated structured knowledge can be version-controlled as needed.
+- **Fits long-lived projects**: built-in tool memory is more like "the assistant remembers you"; `hermes-repo` is more like "the project remembers itself." People can switch tools, machines, or sessions, and the core context still stays in the repo.
 
-From your project Git root:
+So it is not meant to replace each tool's built-in memory. It adds a lower layer: **give the project an independent, transparent, portable long-term memory.**
+
+![hermes-repo memory loop](https://neptune-ipc.oss-cn-shenzhen.aliyuncs.com/img/20260708173801133.png)
+
+## Not "saving chat history" — project knowledge consolidation
+
+Ordinary chat history has a problem: the information exists, but it is not usable. You have to dig, summarize, and paste it into the next session yourself.
+
+`hermes-repo` is closer to a project knowledge base:
+
+- `.memory/MEMORY.md`: navigation summary injected into the next session.
+- `.memory/rules/`: rules loaded in full on every inject.
+- `.memory/domains/`: domain knowledge and business background.
+- `.memory/workflows/`: reusable development procedures.
+- `.memory/decisions/`: architecture and product decisions.
+- `.memory/incidents/`: failure stories and root-cause analysis.
+
+This structured knowledge can travel with the Git repo by default; local sensitive data such as `.memory/config.json`, raw transcripts, and processing state is gitignored.
+
+## Why this matters
+
+The efficiency bottleneck in AI coding often is not whether the model can write code — it is whether it understands the current project:
+
+- Does it know your package manager, directory layout, and naming style?
+- Does it know which approaches were tried before, and why they were abandoned?
+- Does it know the real root cause of a bug and the fix boundaries?
+- Does it know which files the team allows changing, and which ones should not be touched casually?
+
+If people have to re-explain everything every time, the AI is only a one-off contractor.
+If context can be captured, consolidated, and injected, it becomes more like a long-term collaborator on the project.
+
+## From personal repo memory to team-level memory
+
+The monorepo is already split into three layers:
+
+- `@riconext/hermes-repo`: CLI, hooks, and the local `.memory/` workflow — published on npm.
+- `@riconext/hermes-mcp-server`: team memory MCP service based on FastMCP + PostgreSQL, with tools for list / add / search / promote / delete memory.
+- `@riconext/hermes-ui`: Web admin UI based on Next.js 16 + Shadcn/ui for managing projects and memories.
+
+![hermes-repo module structure](https://neptune-ipc.oss-cn-shenzhen.aliyuncs.com/img/20260708173837700.png)
+
+More importantly, the MCP service and UI do not depend on a third-party hosted platform. You can deploy them on your own machine, an internal server, or team infrastructure — database, access control, memory content, and upgrade cadence stay under your control. That matters especially for teams that do not want project knowledge scattered across different SaaS tools.
+
+The direction is clear: first give every repository its own long-term memory, then promote valuable experience into shared team knowledge.
+
+## Who it is for
+
+If you regularly use AI coding assistants on a project, `hermes-repo` is for you.
+
+If your team already switches among Claude Code, Cursor, CodeBuddy, or Codex, it is an even better fit.
+
+If you are tired of every new session feeling like onboarding a new hire, this is the problem it solves.
+
+Project:
+
+```text
+https://github.com/ricoNext/hermes-repo
+```
+
+Install:
 
 ```bash
 npx @riconext/hermes-repo init
-```
-
-Interactive `init` asks for:
-
-- target repository directory
-- assistants to wire up
-- whether to write the capture example template to `.memory/templates/`
-- whether to configure an OpenAI-compatible LLM now
-
-If you configure LLM during init, hermes-repo writes the settings to `.memory/config.json` and the final summary confirms whether `flush` is ready. If LLM is incomplete, `capture` and `inject` still work, but `flush` / `autoFlush` cannot consolidate memory yet.
-
-Non-interactive setup:
-
-```bash
-npx @riconext/hermes-repo init -y --tools claude-code
-npx @riconext/hermes-repo init -y --tools claude-code,cursor,codebuddy,codex
-```
-
-`-y` skips the LLM prompt. Edit `.memory/config.json` manually afterward if you need `flush` or `autoFlush`.
-
-Then use your assistant normally:
-
-1. At session start, the hook runs `inject`.
-2. At session end, the hook runs `capture`.
-3. When raw captures accumulate and LLM is configured, either wait for `autoFlush` or run manually:
-
-```bash
-npx @riconext/hermes-repo flush
 ```
 
 ## Architecture
@@ -139,6 +160,77 @@ Runtime:
 | Knowledge | `.memory/MEMORY.md`, `.memory/rules/`, `.memory/domains/`, `.memory/workflows/`, `.memory/decisions/`, `.memory/incidents/` | tracked unless your gitignore excludes them | structured memory injected into future sessions |
 | Assistant guidance | `AGENTS.md`, selected assistant config files | normal repo files | tells assistants how to use memory |
 
+# Getting Started
+
+From your project Git root:
+
+```bash
+npx @riconext/hermes-repo init
+```
+
+Interactive `init` asks for:
+
+- target repository directory
+- assistants to wire up
+- whether to write the capture example template to `.memory/templates/`
+- whether to configure an OpenAI-compatible LLM now
+
+If you configure LLM during init, hermes-repo writes the settings to `.memory/config.json` and the final summary confirms whether `flush` is ready. If LLM is incomplete, `capture` and `inject` still work, but `flush` / `autoFlush` cannot consolidate memory yet.
+
+> `flush` / `autoFlush` is critical: it uses an LLM to summarize raw session captures, generate a memory map index, and inject that index into context on the next conversation.
+
+Other `init` options:
+
+| Option | Description |
+|--------|-------------|
+| `-y, --yes` | Non-interactive mode with defaults (skip all prompts) |
+| `-f, --force` | Overwrite existing scaffold files (does not delete captures, etc.) |
+| `-C, --cwd <dir>` | Target directory; defaults to the current working directory |
+| `--tools <ids>` | Comma-separated assistant ids, e.g. `claude-code,cursor` (**must be used with `-y`**) |
+| `--mcp-project-id <id>` | Non-interactive: enable MCP and bind a team project UUID |
+| `--mcp-server-url <url>` | Non-interactive: MCP server URL; default `http://localhost:3000` |
+| `--mcp-user-id <id>` | Non-interactive: MCP user UUID, used when pushing memories |
+
+Examples:
+
+```bash
+# Interactive init
+hermes-repo init
+
+# Non-interactive with default assistants
+hermes-repo init -y
+
+# Non-interactive with multiple assistants
+hermes-repo init -y --tools claude-code,cursor
+
+# Non-interactive + enable MCP
+hermes-repo init -y \
+  --mcp-project-id "uuid-here" \
+  --mcp-user-id "user-uuid-here" \
+  --mcp-server-url "http://localhost:3000"
+
+# Force overwrite existing files
+hermes-repo init -y -f
+
+# Init in a specific directory
+hermes-repo init -y -C /path/to/repo
+```
+
+Notes:
+
+- `--tools` must be used with `-y`, otherwise it errors
+- MCP-related options only take effect in non-interactive mode
+
+Then use your assistant normally:
+
+1. At session start, the hook runs `inject` to inject the `MEMORY.md` navigation summary.
+2. At session end, the hook runs `capture` for raw session capture.
+3. When raw captures accumulate and LLM is configured, wait for `autoFlush` or run manually:
+
+```bash
+npx @riconext/hermes-repo flush
+```
+
 ## LLM Configuration
 
 Configure LLM to enable consolidation. `flush`, `capture-llm`, and `autoFlush` all depend on it.
@@ -173,8 +265,8 @@ Important details:
 - `enabled`, `apiKey`, `baseUrl`, and `model` must all be set for LLM calls.
 - `baseUrl` is the service root; hermes-repo calls `{baseUrl}/chat/completions`.
 - Native Anthropic or Gemini endpoints are not supported directly. Use a gateway that exposes an OpenAI-compatible endpoint.
-- `.memory/config.json` is gitignored because it may contain `apiKey`.
-- `consolidate.autoFlush.enabled` is on by default for new projects. With complete LLM config, captures can automatically trigger background `flush` after thresholds are met.
+- `.memory/config.json` may contain `apiKey` and is gitignored by default.
+- New projects enable `consolidate.autoFlush.enabled` by default. With complete LLM config, capture can trigger background `flush` when thresholds are met.
 - If you turn `autoFlush` off, run `npx @riconext/hermes-repo flush` manually after captures accumulate.
 
 Process queued capture upgrades manually:
@@ -187,6 +279,23 @@ npx @riconext/hermes-repo capture-llm --flush
 
 hermes-repo provides an MCP server (`@riconext/hermes-mcp-server`) for team-level memory management. It exposes MCP tools for listing projects, adding memories, searching, and promoting memories, alongside a REST API for the web UI.
 
+The MCP service is used in two places:
+
+- During `flush`: the program pulls team memories from the MCP service and pushes personal memories
+- In conversation: you can ask the coding tool to call MCP tools to pull team memories into the project or push memories to the service
+
+To push and pull team memories during `flush`, configure the MCP service during `init`.
+
+These fields matter:
+
+```json
+"serverUrl": "MCP server URL",
+"projectId": "projectId registered on the MCP server for the current project",
+"userId": "userId created on the MCP server for the current project",
+```
+
+To make MCP tools available automatically in conversation, you can also add the MCP server manually. It provides the following tools:
+
 ### MCP Tools
 
 - `list_projects` — list available projects
@@ -195,7 +304,9 @@ hermes-repo provides an MCP server (`@riconext/hermes-mcp-server`) for team-leve
 - `promote_memory` — promote a memory to team level
 - `delete_memory` — delete a memory
 
-### Setup MCP Server
+### Deploy the MCP Server
+
+You need to deploy the MCP service yourself before using it. Clone the project locally and:
 
 1. **Start PostgreSQL**
 
@@ -245,13 +356,10 @@ Add the MCP server to your Claude Code configuration:
 ```json
 {
   "mcpServers": {
-    "hermes-memory": {
-      "command": "node",
-      "args": ["/path/to/hermes-repo/packages/mcp-server/dist/index.js"],
-      "env": {
-        "DATABASE_URL": "postgresql://hermes:hermes@localhost:5432/hermes_memory",
-        "MCP_TRANSPORT": "stdio",
-        "DEV_AUTH_BYPASS": "true"
+    "hermes": {
+      "url": "http://localhost:3000/mcp",
+      "headers": {
+        "X-User-Id": "00000000-0000-4000-8000-000000000001"
       }
     }
   }
@@ -291,7 +399,7 @@ The web UI (`@riconext/hermes-ui`) provides a dashboard for browsing projects an
    bun run dev
    ```
 
-   Access the UI at [http://localhost:3001](http://localhost:3001).
+   Access the UI at `http://localhost:3001`
 
 3. **Build for production**
 
@@ -301,124 +409,77 @@ The web UI (`@riconext/hermes-ui`) provides a dashboard for browsing projects an
    bun run start
    ```
 
-## Supported Assistants
+> The MCP service is optional, but if you need team memory management with `@riconext/hermes-repo`, you must deploy the MCP service yourself.
 
-| Assistant | Setup written by `init` | Runtime behavior |
-|-----------|-------------------------|------------------|
-| Claude Code | `.claude/settings.local.json` | SessionStart inject, Stop capture |
-| Cursor | `.cursor/hooks.json` | sessionStart inject, stop capture |
-| CodeBuddy | `.codebuddy/settings.local.json` | SessionStart inject, Stop capture |
-| OpenAI Codex | `.codex/config.toml`, `.codex/hooks.json` | SessionStart inject, Stop capture |
-
-Default non-interactive assistant selection is `claude-code`.
-
-## CLI
-
-```bash
-npx @riconext/hermes-repo init [options]
-npx @riconext/hermes-repo capture [options]
-npx @riconext/hermes-repo inject [options]
-npx @riconext/hermes-repo capture-llm [options]
-npx @riconext/hermes-repo flush [options]
-```
-
-### `init`
-
-Initializes the memory tree and assistant hook config.
-
-Options:
-
-- `-y, --yes`: non-interactive mode
-- `--tools <ids>`: comma-separated assistant ids, requires `-y`
-- `-f, --force`: refresh scaffold files and managed blocks
-- `-C, --cwd <dir>`: target directory
-
-Known assistant ids: `claude-code`, `cursor`, `codebuddy`, `codex`.
-
-### `capture`
-
-Usually called by assistant Stop hooks. It reads hook stdin, resolves the assistant transcript, and appends to `.memory/captures/raw/session-{id}.md`.
-
-Options:
-
-- `-C, --cwd <dir>`
-- `--dry-run`
-- `--strict`
-
-### `inject`
-
-Usually called by assistant SessionStart hooks. It outputs `MEMORY.md` and all `rules/*.md`, using the hook-specific JSON shape for Cursor and Codex.
-
-Options:
-
-- `-C, --cwd <dir>`
-- `--strict`
-
-### `capture-llm`
-
-Processes pending capture upgrade jobs.
-
-Options:
-
-- `-C, --cwd <dir>`
-- `--job <id>`
-- `--flush`
-- `--strict`
-
-### `flush`
-
-Runs LLM consolidation over pending or stale raw session captures.
-
-Options:
-
-- `-C, --cwd <dir>`
-- `--force`
-- `--dry-run`
-- `--strict`
-
-If LLM is disabled or incomplete, `flush` exits successfully by default for hook safety but prints `LLM not enabled in config.json`. Use `--strict` when you want failures to produce a non-zero exit code.
-
-## Troubleshooting
-
-Enable debug logs in `.memory/config.json`:
+# Configuration Reference
 
 ```json
 {
-  "debug": true
+  // Supported AI coding tools
+  "assistants": [
+    "claude-code",
+    "cursor",
+    "codebuddy",
+    "codex"
+  ],
+
+  // Enable debug logs; logs are written to .memory/logs/
+  "debug": false,
+  // LLM config
+  "llm": {
+    // Whether LLM is enabled
+    "enabled": true,
+    // Provider
+    "provider": "openai",
+    "baseUrl": "https://api.deepseek.com",
+    "model": "deepseek-v4-flash",
+    // API key
+    "apiKey": "",
+    // Request timeout (ms)
+    "timeoutMs": 60000,
+    // Max input characters per request
+    "maxInputChars": 24000
+  },
+  // Consolidation / auto flush / archive config
+  "consolidate": {
+    // Entries older than N days may be archived
+    "autoArchiveDays": 30,
+    "autoFlush": {
+      // Whether to auto flush --if-needed after capture
+      "enabled": true,
+      // Pending session count threshold; flush when exceeded
+      "minPendingSessions": 3,
+      // Minimum minutes since last consolidation
+      "minIntervalMinutes": 30,
+      // Pending total character threshold
+      "maxPendingChars": 20000
+
+      // Consolidation runs only when any threshold is met and LLM is available.
+    }
+  },
+  "mcp": {
+    // Whether MCP sync is enabled
+    "enabled": true,
+    // MCP server URL
+    "serverUrl": "",
+    // Project UUID
+    "projectId": "",
+    // User UUID
+    "userId": "",
+    "sync": {
+      // Sync mode: auto / manual / off
+      "mode": "auto",
+      "onFlush": {
+        // Push on flush
+        "push": true,
+        // Pull on flush
+        "pull": true
+      },
+      // Retry count
+      "retries": 3,
+      // Timeout (ms)
+      "timeout": 30000
+    }
+  }
 }
 ```
-
-Useful logs:
-
-- `.memory/logs/capture.log`
-- `.memory/logs/flush.log`
-- `.memory/logs/consolidate.log`
-
-Local CLI debugging:
-
-```bash
-bun run build
-node dist/cli.js --help
-```
-
-## Development
-
-Requires Node.js >= 20.
-
-```bash
-bun install
-bun run build
-bun run test
-bun run typecheck
-```
-
-Release:
-
-```bash
-bun run changeset
-bun run release
-```
-
-## License
-
-[MIT](LICENSE)

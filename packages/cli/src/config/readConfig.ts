@@ -91,7 +91,6 @@ function parseMcpConfig(raw: Record<string, unknown>): McpConfig {
 
   const syncConfig = asObject(mcp.sync);
   const onFlush = asObject(syncConfig.onFlush);
-  const dedupConfig = asObject(mcp.deduplication);
 
   return {
     enabled,
@@ -106,11 +105,6 @@ function parseMcpConfig(raw: Record<string, unknown>): McpConfig {
       },
       retries: typeof syncConfig.retries === "number" ? syncConfig.retries : 3,
       timeout: typeof syncConfig.timeout === "number" ? syncConfig.timeout : 30000,
-    },
-    deduplication: {
-      enabled: dedupConfig.enabled !== false,
-      strategy: dedupConfig.strategy === "keep-both" ? "keep-both" : "team-first",
-      similarityThreshold: typeof dedupConfig.similarityThreshold === "number" ? dedupConfig.similarityThreshold : 0.9,
     },
   };
 }

@@ -28,10 +28,5 @@ export function defaultDisabledMcpConfig(): McpConfig {
       retries: 3,
       timeout: 30000,
     },
-    deduplication: {
-      enabled: true,
-      strategy: "team-first",
-      similarityThreshold: 0.9,
-    },
   };
 }

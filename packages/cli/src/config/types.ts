@@ -34,11 +34,6 @@ export interface McpConfig {
     retries: number;
     timeout: number;
   };
-  deduplication: {
-    enabled: boolean;
-    strategy: 'team-first' | 'keep-both';
-    similarityThreshold: number;
-  };
 }
 
 export interface ProjectBinding {

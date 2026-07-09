@@ -162,4 +162,31 @@ describe("mergeConfigForInit", () => {
     });
   });
 
+  it("strips unused mcp.deduplication on re-init merge", () => {
+    const root = mkdtempSync(join(tmpdir(), "hermes-merge-cfg-"));
+    tempDirs.push(root);
+    mkdirSync(join(root, ".memory"), { recursive: true });
+    writeFileSync(
+      join(root, ".memory", "config.json"),
+      `${JSON.stringify({
+        assistants: ["claude-code"],
+        mcp: {
+          enabled: false,
+          serverUrl: "http://localhost:3000",
+          deduplication: {
+            enabled: true,
+            strategy: "team-first",
+            similarityThreshold: 0.9,
+          },
+        },
+      })}\n`,
+      "utf8",
+    );
+
+    const { content } = mergeConfigForInit(root, ["claude-code"]);
+    const config = JSON.parse(content) as {
+      mcp?: { deduplication?: unknown };
+    };
+    expect(config.mcp?.deduplication).toBeUndefined();
+  });
 });

@@ -62,7 +62,10 @@ export function mergeConfigForInit(
   const prevLlm = asObject(existing.llm);
   const prevConsolidate = asObject(existing.consolidate);
   const prevAutoFlush = asObject(prevConsolidate.autoFlush);
-  const prevMcp = asObject(existing.mcp);
+  const {
+    deduplication: _ignoredDeduplication,
+    ...prevMcp
+  } = asObject(existing.mcp);
 
   const {
     version: _ignoredVersion,
