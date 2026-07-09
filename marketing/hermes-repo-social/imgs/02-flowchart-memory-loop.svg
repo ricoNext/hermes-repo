@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="900" viewBox="0 0 1600 900" role="img" aria-labelledby="title desc">
+  <title id="title">hermes-repo capture consolidate inject loop</title>
+  <desc id="desc">A circular process diagram showing Capture, Consolidate, and Inject around the .memory repository folder.</desc>
+  <rect width="1600" height="900" fill="#f8fafc"/>
+  <text x="800" y="120" text-anchor="middle" font-family="Arial, 'PingFang SC', sans-serif" font-size="52" font-weight="700" fill="#0f172a">capture → consolidate → inject</text>
+  <text x="800" y="170" text-anchor="middle" font-family="Arial, 'PingFang SC', sans-serif" font-size="26" fill="#475569">把一次会话里的有效上下文，变成下一次会话能直接使用的项目知识</text>
+
+  <circle cx="800" cy="475" r="160" fill="#ffffff" stroke="#1e293b" stroke-width="5"/>
+  <path d="M690 430h220v145h-220z" fill="#ffffff" stroke="#1e293b" stroke-width="4"/>
+  <path d="M690 430h92l28 30h100v40h-220z" fill="#dbeafe" stroke="#1e293b" stroke-width="4" stroke-linejoin="round"/>
+  <text x="800" y="530" text-anchor="middle" font-family="Arial, 'PingFang SC', sans-serif" font-size="42" font-weight="700" fill="#2563eb">.memory/</text>
+
+  <rect x="150" y="340" width="330" height="170" rx="24" fill="#eff6ff" stroke="#2563eb" stroke-width="4"/>
+  <text x="315" y="395" text-anchor="middle" font-family="Arial, 'PingFang SC', sans-serif" font-size="34" font-weight="700" fill="#1d4ed8">Capture</text>
+  <text x="315" y="440" text-anchor="middle" font-family="Arial, 'PingFang SC', sans-serif" font-size="23" fill="#334155">Stop hook 捕获会话</text>
+  <text x="315" y="478" text-anchor="middle" font-family="Arial, 'PingFang SC', sans-serif" font-size="21" fill="#334155">写入 captures/raw</text>
+
+  <rect x="635" y="665" width="330" height="170" rx="24" fill="#fffbeb" stroke="#f59e0b" stroke-width="4"/>
+  <text x="800" y="720" text-anchor="middle" font-family="Arial, 'PingFang SC', sans-serif" font-size="34" font-weight="700" fill="#b45309">Consolidate</text>
+  <text x="800" y="765" text-anchor="middle" font-family="Arial, 'PingFang SC', sans-serif" font-size="23" fill="#334155">LLM 整理成知识文件</text>
+  <text x="800" y="803" text-anchor="middle" font-family="Arial, 'PingFang SC', sans-serif" font-size="21" fill="#334155">rules · workflows · decisions</text>
+
+  <rect x="1120" y="340" width="330" height="170" rx="24" fill="#ecfdf5" stroke="#16a34a" stroke-width="4"/>
+  <text x="1285" y="395" text-anchor="middle" font-family="Arial, 'PingFang SC', sans-serif" font-size="34" font-weight="700" fill="#15803d">Inject</text>
+  <text x="1285" y="440" text-anchor="middle" font-family="Arial, 'PingFang SC', sans-serif" font-size="23" fill="#334155">SessionStart 注入记忆</text>
+  <text x="1285" y="478" text-anchor="middle" font-family="Arial, 'PingFang SC', sans-serif" font-size="21" fill="#334155">MEMORY.md + rules/*.md</text>
+
+  <path d="M492 425c80-145 200-215 308-215 120 0 238 77 314 210" fill="none" stroke="#1e293b" stroke-width="7" stroke-linecap="round"/>
+  <path d="M1082 374l41 46-60 6" fill="none" stroke="#1e293b" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M1170 535c-78 112-202 175-370 175s-292-63-370-175" fill="none" stroke="#1e293b" stroke-width="7" stroke-linecap="round"/>
+  <path d="M461 548l-31-47 61-1" fill="none" stroke="#1e293b" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M965 735c150-13 269-86 333-208" fill="none" stroke="#1e293b" stroke-width="7" stroke-linecap="round"/>
+  <path d="M1270 580l28-53 28 54" fill="none" stroke="#1e293b" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
+
+  <text x="800" y="250" text-anchor="middle" font-family="Arial, 'PingFang SC', sans-serif" font-size="24" font-weight="700" fill="#475569">自动接到 Claude Code / Cursor / CodeBuddy / OpenAI Codex</text>
+</svg>
+

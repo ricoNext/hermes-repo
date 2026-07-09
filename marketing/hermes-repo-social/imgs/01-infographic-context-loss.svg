@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="900" viewBox="0 0 1600 900" role="img" aria-labelledby="title desc">
+  <title id="title">AI coding sessions lose project context</title>
+  <desc id="desc">A comparison between repeated AI coding explanations and hermes-repo storing project memory in the Git repository.</desc>
+  <rect width="1600" height="900" fill="#f8fafc"/>
+  <rect x="70" y="80" width="1460" height="740" rx="28" fill="#ffffff" stroke="#1e293b" stroke-width="4"/>
+  <text x="800" y="155" text-anchor="middle" font-family="Arial, 'PingFang SC', sans-serif" font-size="48" font-weight="700" fill="#0f172a">AI 编程最烦的事：上下文总要重讲</text>
+  <text x="800" y="205" text-anchor="middle" font-family="Arial, 'PingFang SC', sans-serif" font-size="26" fill="#475569">hermes-repo 把项目记忆留在 Git 仓库里，让下一次会话直接接上</text>
+
+  <rect x="125" y="270" width="560" height="430" rx="22" fill="#fff7ed" stroke="#ef4444" stroke-width="3"/>
+  <text x="405" y="330" text-anchor="middle" font-family="Arial, 'PingFang SC', sans-serif" font-size="34" font-weight="700" fill="#991b1b">普通 AI 编程会话</text>
+  <circle cx="220" cy="430" r="54" fill="#fed7aa" stroke="#1e293b" stroke-width="3"/>
+  <path d="M190 428c18-42 44-42 62 0" fill="none" stroke="#1e293b" stroke-width="5" stroke-linecap="round"/>
+  <circle cx="205" cy="414" r="5" fill="#1e293b"/>
+  <circle cx="238" cy="414" r="5" fill="#1e293b"/>
+  <rect x="305" y="378" width="300" height="56" rx="15" fill="#ffffff" stroke="#1e293b" stroke-width="3"/>
+  <text x="455" y="415" text-anchor="middle" font-family="Arial, 'PingFang SC', sans-serif" font-size="24" font-weight="700" fill="#1e293b">包管理器用 bun</text>
+  <rect x="305" y="455" width="300" height="56" rx="15" fill="#ffffff" stroke="#1e293b" stroke-width="3"/>
+  <text x="455" y="492" text-anchor="middle" font-family="Arial, 'PingFang SC', sans-serif" font-size="24" font-weight="700" fill="#1e293b">API 是这种形态</text>
+  <rect x="305" y="532" width="300" height="56" rx="15" fill="#ffffff" stroke="#1e293b" stroke-width="3"/>
+  <text x="455" y="569" text-anchor="middle" font-family="Arial, 'PingFang SC', sans-serif" font-size="24" font-weight="700" fill="#1e293b">上周 bug 根因是...</text>
+  <text x="405" y="655" text-anchor="middle" font-family="Arial, 'PingFang SC', sans-serif" font-size="26" font-weight="700" fill="#ef4444">每开一个新会话，就重来一遍</text>
+
+  <path d="M735 482h150" stroke="#1e293b" stroke-width="8" stroke-linecap="round"/>
+  <path d="M865 450l42 32-42 32" fill="none" stroke="#1e293b" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="810" y="440" text-anchor="middle" font-family="Arial, 'PingFang SC', sans-serif" font-size="24" font-weight="700" fill="#475569">换一种方式</text>
+
+  <rect x="920" y="270" width="560" height="430" rx="22" fill="#ecfdf5" stroke="#22c55e" stroke-width="3"/>
+  <text x="1200" y="330" text-anchor="middle" font-family="Arial, 'PingFang SC', sans-serif" font-size="34" font-weight="700" fill="#166534">hermes-repo</text>
+  <path d="M1040 410h320v205h-320z" fill="#ffffff" stroke="#1e293b" stroke-width="4"/>
+  <path d="M1040 410h130l34 38h156v54h-320z" fill="#dbeafe" stroke="#1e293b" stroke-width="4" stroke-linejoin="round"/>
+  <text x="1200" y="545" text-anchor="middle" font-family="Arial, 'PingFang SC', sans-serif" font-size="38" font-weight="700" fill="#2563eb">.memory/</text>
+  <text x="1200" y="590" text-anchor="middle" font-family="Arial, 'PingFang SC', sans-serif" font-size="23" fill="#334155">MEMORY.md · rules · workflows · decisions</text>
+  <rect x="1010" y="648" width="380" height="52" rx="16" fill="#dcfce7" stroke="#16a34a" stroke-width="3"/>
+  <text x="1200" y="683" text-anchor="middle" font-family="Arial, 'PingFang SC', sans-serif" font-size="24" font-weight="700" fill="#166534">项目记忆跟着仓库走</text>
+
+  <circle cx="980" cy="380" r="18" fill="#3b82f6"/>
+  <circle cx="1420" cy="380" r="18" fill="#f59e0b"/>
+  <circle cx="1420" cy="640" r="18" fill="#22c55e"/>
+  <circle cx="980" cy="640" r="18" fill="#8b5cf6"/>
+  <text x="800" y="775" text-anchor="middle" font-family="Arial, 'PingFang SC', sans-serif" font-size="30" font-weight="700" fill="#0f172a">少解释一次上下文，就多一次真正推进代码的机会</text>
+</svg>
+

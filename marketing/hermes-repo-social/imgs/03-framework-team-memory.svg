@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="900" viewBox="0 0 1600 900" role="img" aria-labelledby="title desc">
+  <title id="title">hermes-repo modules from local to team memory</title>
+  <desc id="desc">A framework diagram of the CLI hooks, MCP server, and Web UI modules feeding into team memory management.</desc>
+  <rect width="1600" height="900" fill="#ffffff"/>
+  <text x="800" y="105" text-anchor="middle" font-family="Arial, 'PingFang SC', sans-serif" font-size="50" font-weight="700" fill="#111827">从个人项目记忆，到团队记忆系统</text>
+  <text x="800" y="155" text-anchor="middle" font-family="Arial, 'PingFang SC', sans-serif" font-size="25" fill="#4b5563">hermes-repo 已经拆成 CLI、MCP Server、Web UI 三层</text>
+
+  <rect x="95" y="255" width="420" height="330" rx="24" fill="#eff6ff" stroke="#3b82f6" stroke-width="4"/>
+  <circle cx="155" cy="315" r="28" fill="#3b82f6"/>
+  <text x="155" y="325" text-anchor="middle" font-family="Arial, sans-serif" font-size="28" font-weight="700" fill="#ffffff">&gt;</text>
+  <text x="305" y="325" text-anchor="middle" font-family="Arial, 'PingFang SC', sans-serif" font-size="34" font-weight="700" fill="#1d4ed8">CLI / Hooks</text>
+  <text x="305" y="385" text-anchor="middle" font-family="Arial, 'PingFang SC', sans-serif" font-size="24" fill="#374151">@riconext/hermes-repo</text>
+  <text x="305" y="435" text-anchor="middle" font-family="Arial, 'PingFang SC', sans-serif" font-size="24" font-weight="700" fill="#111827">init · capture · inject · flush</text>
+  <text x="305" y="490" text-anchor="middle" font-family="Arial, 'PingFang SC', sans-serif" font-size="22" fill="#374151">Claude Code / Cursor</text>
+  <text x="305" y="528" text-anchor="middle" font-family="Arial, 'PingFang SC', sans-serif" font-size="22" fill="#374151">CodeBuddy / OpenAI Codex</text>
+
+  <rect x="590" y="255" width="420" height="330" rx="24" fill="#ecfdf5" stroke="#22c55e" stroke-width="4"/>
+  <circle cx="650" cy="315" r="28" fill="#22c55e"/>
+  <text x="650" y="325" text-anchor="middle" font-family="Arial, sans-serif" font-size="24" font-weight="700" fill="#ffffff">M</text>
+  <text x="800" y="325" text-anchor="middle" font-family="Arial, 'PingFang SC', sans-serif" font-size="34" font-weight="700" fill="#15803d">MCP Server</text>
+  <text x="800" y="385" text-anchor="middle" font-family="Arial, 'PingFang SC', sans-serif" font-size="24" fill="#374151">FastMCP + PostgreSQL</text>
+  <text x="800" y="435" text-anchor="middle" font-family="Arial, 'PingFang SC', sans-serif" font-size="24" font-weight="700" fill="#111827">list · add · search · promote</text>
+  <text x="800" y="490" text-anchor="middle" font-family="Arial, 'PingFang SC', sans-serif" font-size="22" fill="#374151">团队级记忆管理</text>
+  <text x="800" y="528" text-anchor="middle" font-family="Arial, 'PingFang SC', sans-serif" font-size="22" fill="#374151">REST API + MCP tools</text>
+
+  <rect x="1085" y="255" width="420" height="330" rx="24" fill="#f5f3ff" stroke="#8b5cf6" stroke-width="4"/>
+  <circle cx="1145" cy="315" r="28" fill="#8b5cf6"/>
+  <text x="1145" y="325" text-anchor="middle" font-family="Arial, sans-serif" font-size="22" font-weight="700" fill="#ffffff">UI</text>
+  <text x="1295" y="325" text-anchor="middle" font-family="Arial, 'PingFang SC', sans-serif" font-size="34" font-weight="700" fill="#6d28d9">Web UI</text>
+  <text x="1295" y="385" text-anchor="middle" font-family="Arial, 'PingFang SC', sans-serif" font-size="24" fill="#374151">Next.js 16 + Shadcn/ui</text>
+  <text x="1295" y="435" text-anchor="middle" font-family="Arial, 'PingFang SC', sans-serif" font-size="24" font-weight="700" fill="#111827">项目 · 记忆 · 成员</text>
+  <text x="1295" y="490" text-anchor="middle" font-family="Arial, 'PingFang SC', sans-serif" font-size="22" fill="#374151">可视化管理入口</text>
+  <text x="1295" y="528" text-anchor="middle" font-family="Arial, 'PingFang SC', sans-serif" font-size="22" fill="#374151">面向团队协作</text>
+
+  <path d="M305 610v70h990v-70" fill="none" stroke="#1f2937" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M800 585v95" stroke="#1f2937" stroke-width="6" stroke-linecap="round"/>
+  <rect x="365" y="685" width="870" height="110" rx="24" fill="#fffbeb" stroke="#f59e0b" stroke-width="4"/>
+  <text x="800" y="733" text-anchor="middle" font-family="Arial, 'PingFang SC', sans-serif" font-size="33" font-weight="700" fill="#92400e">Team Memory Layer</text>
+  <text x="800" y="775" text-anchor="middle" font-family="Arial, 'PingFang SC', sans-serif" font-size="24" fill="#374151">本地密钥和 transcript 被忽略；结构化知识可以进入版本控制</text>
+</svg>
+
