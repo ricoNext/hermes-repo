@@ -1,5 +1,7 @@
 # Product Introduction
 
+[项目介绍](https://linux.do/t/topic/2502074)
+
 npm: `@riconext/hermes-repo` · Inspired by [Hermes Agent](https://github.com/NousResearch/hermes) memory & skill loop · [中文](README.zh-CN.md)
 
 ```text
