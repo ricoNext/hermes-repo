@@ -1,5 +1,4 @@
 import {
-  existsSync,
   mkdirSync,
   mkdtempSync,
   readFileSync,
@@ -7,12 +6,14 @@ import {
   writeFileSync,
 } from "node:fs";
 import { tmpdir } from "node:os";
-import { dirname, join } from "node:path";
-import { fileURLToPath } from "node:url";
+import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
-import { mergeAgentsMd } from "../src/init/mergeAgentsMd.js";
+import {
+  HERMES_AGENTS_END_MARKER,
+  HERMES_AGENTS_START_MARKER,
+  mergeAgentsMd,
+} from "../src/init/mergeAgentsMd.js";
 
-const rootDir = join(dirname(fileURLToPath(import.meta.url)), "..");
 const tempDirs: string[] = [];
 
 function makeRepo(): string {
@@ -25,6 +26,13 @@ function makeRepo(): string {
     "utf8",
   );
   return dir;
+}
+
+function expectHermesBlockResolved(content: string): void {
+  expect(content).not.toContain("__HERMES_AGENTS_BLOCK__");
+  expect(content).toContain(HERMES_AGENTS_START_MARKER);
+  expect(content).toContain(HERMES_AGENTS_END_MARKER);
+  expect(content).toContain("# Hermes 记忆系统指南");
 }
 
 afterEach(() => {
@@ -40,10 +48,9 @@ describe("mergeAgentsMd", () => {
     expect(action).toBe("created");
 
     const content = readFileSync(join(dir, "AGENTS.md"), "utf8");
-    // 文件应该被创建且有实际内容
     expect(content.length).toBeGreaterThan(50);
-    // 应包含 hermes 标记（来自模板系统）
-    expect(content).toMatch(/hermes.?repo|hermes.*agents/i);
+    expectHermesBlockResolved(content);
+    expect(content).toContain("# 项目指令");
   });
 
   it("appends hermes block to existing AGENTS.md without markers", () => {
@@ -54,30 +61,30 @@ describe("mergeAgentsMd", () => {
 
     const content = readFileSync(join(dir, "AGENTS.md"), "utf8");
     expect(content).toContain("# Existing");
-    expect(content.length).toBeGreaterThan(50);
+    expectHermesBlockResolved(content);
   });
 
-  it("skips or reuses when block already exists", () => {
+  it("skips when block already exists", () => {
     const dir = makeRepo();
-    mergeAgentsMd(dir, false); // create
-    const action = mergeAgentsMd(dir, false); // second call
-    // 不应重复追加（但某些情况下可能返回 appended）
-    expect(["skipped", "replaced", "appended"]).toContain(action);
+    mergeAgentsMd(dir, false);
+    const action = mergeAgentsMd(dir, false);
+    expect(action).toBe("skipped");
   });
 
   it("force replaces only hermes block and preserves outer content", () => {
     const dir = makeRepo();
     writeFileSync(join(dir, "AGENTS.md"), "# Custom Project\n\nMy notes.\n", "utf8");
-    mergeAgentsMd(dir, false); // append
+    mergeAgentsMd(dir, false);
 
     const content = readFileSync(join(dir, "AGENTS.md"), "utf8");
     expect(content).toContain("# Custom Project");
 
-    const action = mergeAgentsMd(dir, true); // force
+    const action = mergeAgentsMd(dir, true);
     expect(action).toBe("replaced");
 
     const after = readFileSync(join(dir, "AGENTS.md"), "utf8");
     expect(after).toContain("# Custom Project");
+    expectHermesBlockResolved(after);
   });
 
   it("skips legacy hermes prose without markers", () => {
