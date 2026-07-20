@@ -1,6 +1,6 @@
 {
   "name": "@riconext/hermes-repo",
-  "version": "1.5.2",
+  "version": "1.5.3",
   "description": "跨编程助手的项目级记忆系统",
   "packageManager": "bun@1.3.12",
   "type": "module",

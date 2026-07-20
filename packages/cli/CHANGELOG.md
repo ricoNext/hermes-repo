@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.5.3
+
+### Patch Changes
+
+- b6179b4: 修复 init 生成 AGENTS.md 时 `__HERMES_AGENTS_BLOCK__` 未被替换的问题（对调模板内容）
+
 ## 1.5.2
 
 ### Patch Changes
