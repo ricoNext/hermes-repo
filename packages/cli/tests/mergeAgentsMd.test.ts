@@ -103,4 +103,32 @@ Read .memory/MEMORY.md for context.
     const action = mergeAgentsMd(dir, false);
     expect(action).toBe("skipped");
   });
+
+  it("auto-repairs nested unresolved placeholder without force", () => {
+    const dir = makeRepo();
+    writeFileSync(
+      join(dir, "AGENTS.md"),
+      `# Existing
+
+${HERMES_AGENTS_START_MARKER}
+# 项目指令
+
+
+${HERMES_AGENTS_START_MARKER}
+__HERMES_AGENTS_BLOCK__
+${HERMES_AGENTS_END_MARKER}
+${HERMES_AGENTS_END_MARKER}
+`,
+      "utf8",
+    );
+
+    const action = mergeAgentsMd(dir, false);
+    expect(action).toBe("replaced");
+
+    const content = readFileSync(join(dir, "AGENTS.md"), "utf8");
+    expect(content).toContain("# Existing");
+    expectHermesBlockResolved(content);
+    expect(content.split(HERMES_AGENTS_START_MARKER)).toHaveLength(2);
+    expect(content.split(HERMES_AGENTS_END_MARKER)).toHaveLength(2);
+  });
 });

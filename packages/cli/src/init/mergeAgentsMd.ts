@@ -1,11 +1,12 @@
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import type { InitFileAction } from "./types.js";
-import { readTemplate, renderTemplate } from "./templateDir.js";
+import { renderTemplate } from "./templateDir.js";
 
 export const HERMES_AGENTS_START_MARKER =
   "<!-- >>> hermes-repo agents (do not edit this block manually) -->";
 export const HERMES_AGENTS_END_MARKER = "<!-- <<< hermes-repo agents -->";
+export const HERMES_AGENTS_BLOCK_PLACEHOLDER = "__HERMES_AGENTS_BLOCK__";
 
 export function buildHermesAgentsBlockBody(): string {
   return renderTemplate("AGENTS.hermes-block.tpl").trimEnd();
@@ -17,16 +18,21 @@ export function buildHermesAgentsMarkedBlock(): string {
 }
 
 export function buildNewAgentsMd(): string {
-  return renderTemplate("AGENTS.md.tpl").replace(
-    "__HERMES_AGENTS_BLOCK__",
+  return renderTemplate("AGENTS.md.tpl").replaceAll(
+    HERMES_AGENTS_BLOCK_PLACEHOLDER,
     buildHermesAgentsBlockBody(),
   );
 }
 
 export function agentsMdHasHermesBlock(content: string): boolean {
   const startIdx = content.indexOf(HERMES_AGENTS_START_MARKER);
-  const endIdx = content.indexOf(HERMES_AGENTS_END_MARKER);
+  const endIdx = content.lastIndexOf(HERMES_AGENTS_END_MARKER);
   return startIdx !== -1 && endIdx !== -1 && endIdx > startIdx;
+}
+
+/** 旧版模板写反时留下的未替换占位符 */
+export function agentsMdHasUnresolvedHermesPlaceholder(content: string): boolean {
+  return content.includes(HERMES_AGENTS_BLOCK_PLACEHOLDER);
 }
 
 /** 无标记块但已手写 hermes 指引时视为已接入（避免重复追加） */
@@ -56,9 +62,10 @@ function withGapBeforeHermesBlock(prefix: string): string {
   return `${trimmed}${GAP_BEFORE_HERMES_BLOCK}`;
 }
 
+/** 使用最外层起止标记，兼容旧版错误嵌套块 */
 function spliceHermesBlock(existing: string, block: string): string {
   const startIdx = existing.indexOf(HERMES_AGENTS_START_MARKER);
-  const endIdx = existing.indexOf(HERMES_AGENTS_END_MARKER);
+  const endIdx = existing.lastIndexOf(HERMES_AGENTS_END_MARKER);
 
   if (startIdx !== -1 && endIdx !== -1 && endIdx > startIdx) {
     const before = existing.slice(0, startIdx);
@@ -88,11 +95,17 @@ export function mergeAgentsMd(
   }
 
   const content = readFileSync(agentsPath, "utf8");
+  const unresolved = agentsMdHasUnresolvedHermesPlaceholder(content);
 
   if (agentsMdHasHermesBlock(content)) {
-    if (!force) {
+    if (!force && !unresolved) {
       return "skipped";
     }
+    writeFileSync(agentsPath, spliceHermesBlock(content, block), "utf8");
+    return "replaced";
+  }
+
+  if (unresolved) {
     writeFileSync(agentsPath, spliceHermesBlock(content, block), "utf8");
     return "replaced";
   }
