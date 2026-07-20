@@ -10,7 +10,7 @@
     },
     "packages/cli": {
       "name": "@riconext/hermes-repo",
-      "version": "1.5.3",
+      "version": "1.5.4",
       "bin": {
         "hermes-repo": "./dist/cli.js",
       },
